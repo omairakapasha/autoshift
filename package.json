@@ -1,0 +1,72 @@
+{
+  "name": "automobile-showroom",
+  "version": "1.0.0",
+  "description": "Automobile Showroom Management System",
+  "main": "public/electron.js",
+  "homepage": "./",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "electron-dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron-pack": "npm run build && electron-builder build --win --publish never"
+  },
+  "build": {
+    "appId": "com.autoshift.showroom",
+    "productName": "AutoShift",
+    "extraResources": [
+      "configure_showroom.bat"
+    ],
+    "files": [
+      "build/**/*",
+      "public/electron.js",
+      ".env"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "public/favicon.ico"
+    }
+  },
+  "keywords": [
+    "react",
+    "automobile",
+    "showroom",
+    "management"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@sentry/react": "^10.51.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "dotenv": "^17.4.2",
+    "electron-is-dev": "^3.0.1",
+    "lucide-react": "^0.263.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "electron": "^41.5.0",
+    "electron-builder": "^26.8.1",
+    "fake-indexeddb": "^6.2.5",
+    "jest": "^30.3.0",
+    "wait-on": "^9.0.5"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

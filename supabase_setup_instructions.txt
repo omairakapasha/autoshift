@@ -1,0 +1,103 @@
+-- ====================================================
+-- AUTOSHIFT: SUPABASE DATABASE SETUP SCRIPT
+-- ====================================================
+-- HOW TO USE:
+-- 1. Log into the Showroom Owner's Supabase Dashboard.
+-- 2. Go to the "SQL Editor" in the left sidebar.
+-- 3. Click "New Query".
+-- 4. Paste the ENTIRE content of this file.
+-- 5. Click the "Run" button.
+-- ====================================================
+
+-- 1. ENABLE EXTENSIONS
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+-- 2. CREATE TABLES
+CREATE TABLE IF NOT EXISTS clients (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  email TEXT,
+  since DATE DEFAULT CURRENT_DATE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS cars (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  plate TEXT UNIQUE NOT NULL,
+  make TEXT NOT NULL,
+  model TEXT NOT NULL,
+  year INTEGER,
+  color TEXT,
+  client_id UUID REFERENCES clients(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS services (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  plate TEXT NOT NULL,
+  type TEXT NOT NULL,
+  date DATE NOT NULL,
+  next_due DATE NOT NULL,
+  cost NUMERIC,
+  status TEXT DEFAULT 'Completed',
+  tech TEXT,
+  notes TEXT,
+  _last_outreach_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS appointments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  plate TEXT,
+  client_id UUID REFERENCES clients(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  time TEXT NOT NULL,
+  type TEXT NOT NULL,
+  status TEXT DEFAULT 'Pending',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS outreach_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  service_id UUID REFERENCES services(id) ON DELETE CASCADE,
+  client_id UUID REFERENCES clients(id) ON DELETE CASCADE,
+  status TEXT DEFAULT 'sent',
+  generated_message TEXT,
+  metadata JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. ENABLE SECURITY (RLS)
+ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cars ENABLE ROW LEVEL SECURITY;
+ALTER TABLE services ENABLE ROW LEVEL SECURITY;
+ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE outreach_logs ENABLE ROW LEVEL SECURITY;
+
+-- 4. CREATE POLICIES (Open for App PIN-Gate use)
+CREATE POLICY "Allow anon access to clients" ON clients FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "Allow anon access to cars" ON cars FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "Allow anon access to services" ON services FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "Allow anon access to appointments" ON appointments FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "Allow anon access to outreach_logs" ON outreach_logs FOR ALL TO anon USING (true) WITH CHECK (true);
+
+-- 5. CREATE PERFORMANCE INDEXES
+CREATE INDEX IF NOT EXISTS idx_cars_plate ON cars(plate);
+CREATE INDEX IF NOT EXISTS idx_services_next_due ON services(next_due);
+CREATE INDEX IF NOT EXISTS idx_clients_phone ON clients(phone);
+
+-- 6. SETUP DAILY AI OUTREACH (Runs at 9:00 AM Daily)
+SELECT cron.schedule(
+  'daily-client-outreach',
+  '0 9 * * *',
+  $$
+  SELECT
+    net.http_post(
+      url := 'https://' || current_setting('request.headers')::json->>'host' || '/functions/v1/client-outreach',
+      headers := '{"Content-Type": "application/json", "Authorization": "Bearer ' || current_setting('app.settings.service_role_key') || '"}'::jsonb,
+      body := '{}'::jsonb
+    ) as request_id;
+  $$
+);

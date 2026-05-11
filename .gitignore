@@ -1,0 +1,19 @@
+.env
+.env.local
+.env.production
+# Build outputs
+dist/
+build/
+release/
+# Dependencies
+node_modules/
+# Windows
+Thumbs.db
+Desktop.ini
+# Electron
+out/
+# Logs
+*.log
+npm-debug.log*
+# Cache
+.cache/
