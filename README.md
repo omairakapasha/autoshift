@@ -1,10 +1,10 @@
 # AutoShift — AI-Powered Automobile Showroom Management System
 
-> A production-grade **Electron desktop application** for automobile showrooms — featuring offline-first data architecture, Google Gemini AI-driven client outreach, Twilio WhatsApp/SMS automation, and real-time Supabase cloud synchronization.
+> A production-grade **Electron desktop application** for automobile showrooms — featuring offline-first data architecture, Google Gemini AI-driven client outreach, WhatsApp/SMS automation, and real-time Supabase cloud synchronization.
 
 ---
 
-## ✨ What Makes AutoShift Different
+## ✨ What Value AutoShift Adds
 
 Most showroom management tools require constant internet and manual follow-up. AutoShift eliminates both:
 
@@ -154,9 +154,6 @@ The `DatabaseManager` is the core of AutoShift's reliability. Here is the exact 
    - ❌ Failure → retried with exponential backoff (up to 3 attempts)
 5. **Every 30 seconds** — background pull fetches remote changes (`created_at > last_sync`)
 6. **Conflicts resolved** using Last-Write-Wins with field-level merging
-
-**Schema mapping** is handled transparently: frontend uses camelCase (`clientId`), database uses snake_case (`client_id`) — the engine converts automatically.
-
 ---
 
 ## 🚦 Getting Started
@@ -240,40 +237,6 @@ npm run electron-pack
 
 ---
 
-## 🔍 Troubleshooting
-
-### ❌ Electron Packaging Fails (`Cannot create symbolic link`)
-**Cause:** `winCodeSign` utilities require symbolic link permissions.
-
-**Fix (choose one):**
-- Run terminal as **Administrator**
-- Enable **Windows Developer Mode** → Settings → For Developers → Developer Mode ON
-- Then re-run `npm run electron-pack`
-
-### ❌ Supabase `401 Unauthorized` / `RLS Policy Violation`
-1. Go to **Supabase Dashboard** → **Database** → **Policies**
-2. Enable RLS for each table
-3. Create `anon` role policy (see schema setup above)
-
-### ❌ Twilio Messages Not Sending
-- Verify `TWILIO_FROM_NUMBER` is WhatsApp-enabled in Twilio console
-- Confirm the client's number is in E.164 format (`+923001234567`)
-- Check Supabase edge function logs for Twilio error codes
-
-### ❌ Sync Issues / UUID Mismatch
-- Old integer-based local data is incompatible with UUID schema
-- Use **"CLEAR LOCAL CACHE"** button (Admin PIN required) → app re-downloads clean data from Supabase
-
-### 🔍 Checking Sync Status
-Open browser/Electron DevTools console to see live sync logs:
-```
-Starting Supabase synchronization...
-Successfully uploaded 3 operations...
-Remote sync complete — 2 new records merged
-```
-
----
-
 ## 👤 Role Permissions
 
 | Action | Staff PIN | Admin PIN |
@@ -306,31 +269,3 @@ autoshift/
 ├── .env                          # Local environment variables
 └── package.json
 ```
-
----
-
-## 🗺️ Roadmap
-
-- [x] Offline-first sync engine with exponential backoff
-- [x] Gemini AI client reply interpretation
-- [x] Twilio WhatsApp/SMS automated outreach
-- [x] Role-based PinGate authentication
-- [x] Sentry error monitoring
-- [x] Chunked fetching and field-level conflict resolution
-- [ ] Electron auto-updater for `.exe` deployments
-- [ ] E2E testing suite (Playwright)
-- [ ] Manual conflict resolution UI for edge cases
-- [ ] AI-powered vehicle health scoring (integration with OBD-II data)
-- [ ] Multi-branch showroom support
-
----
-
-## 📄 Specifications
-
-Detailed requirements and design specs are in `.kiro/specs/`:
-- `offline-sync-capability/` — sync engine requirements and conflict strategies
-- `automobile-showroom-bugfix/` — original bug analysis and resolution plan
-
----
-
-*Built with React 18, Electron, Supabase, Google Gemini AI, and Twilio.*
