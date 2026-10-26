@@ -9,8 +9,8 @@ Showroom management for a single Windows machine: clients, vehicles, service his
 
 ## What it does
 
-- **Clients and vehicles**: full profiles, each car linked to its owner.
-- **Service tracking**: repair and maintenance jobs, technician, cost, next-due date.
+- **Clients and vehicles**: full profiles, each car linked to its owner, with quick vehicle registration accessible across the app (Sidebar, Dashboard, Directory, and individual Client profiles).
+- **Service tracking**: repair and maintenance jobs, technician, cost, next-due date, logged directly from vehicle profiles.
 - **Alerts**: vehicles whose service is due or overdue.
 - **Appointments**: schedule and view bookings.
 - **Backups**: a consistent copy of the database is written automatically every 24 hours (last 14 kept), plus a *Backup now* button and a configurable backup folder (a USB drive or a synced OneDrive/Drive folder works well).
@@ -24,12 +24,14 @@ There is no server, account or internet connection required. All data stays on t
 ┌─────────────── Electron main process ───────────────┐
 │  electron/db/Database.js   SQLite (better-sqlite3)  │
 │  electron/db/schema.js     migrations + field list  │
+│  electron/auth.js          authentication & lock    │
 │  electron/ipc.js           IPC handlers + backups   │
 └───────────────▲─────────────────────────────────────┘
-                │ IPC (contextBridge, only db.* / backup.*)
+                │ IPC (contextBridge: auth.*, db.*, backup.*)
 ┌───────────────┴─────────────────────────────────────┐
 │  electron/preload.js       window.autoshift          │
 │  Renderer (React, sandboxed, no Node access)         │
+│  src/components/PinGate.jsx  → auth modal & lock    │
 │  src/database/DatabaseManager.js → window.autoshift  │
 └─────────────────────────────────────────────────────┘
 ```
@@ -40,7 +42,8 @@ There is no server, account or internet connection required. All data stays on t
 - Schema changes are versioned migrations (`PRAGMA user_version`). The app refuses to open a database written by a newer version.
 - Only one copy of the app can run at a time, so two processes never write to the same database.
 
-The database file is `autoshift.db` in the app's user-data folder (typically `%APPDATA%\AutoShift` on Windows).
+The database file is `autoshift.db` in the app's user-data folder:
+`%APPDATA%\automobile-showroom\autoshift.db` (or `%APPDATA%\AutoShift\autoshift.db`).
 
 ## Access control
 
@@ -54,16 +57,12 @@ On first launch the owner is asked to create two PINs (4 to 12 digits, and they 
 
 Staff unlock the app with the staff PIN; the owner switches on **Admin mode** from the sidebar by entering the admin PIN (or unlocks directly with it).
 
-- PINs are stored only as salted **scrypt** hashes, never in plaintext, and never sent to the UI.
-- The session is held by the **main process**, which checks it on every request. Editing the UI cannot bypass the PIN.
-- After 5 wrong attempts the app locks out, with a delay that doubles up to 15 minutes. The lockout survives restarts.
-- Any page reload, **Lock system**, or restart ends the session.
-- **Forgot a PIN?** Close AutoShift, then from a Command Prompt on the same machine run:
-  `set AUTOSHIFT_RESET_PINS=1 && "C:\Path\To\AutoShift.exe"`. This clears the PINs (your data is untouched) and the app asks you to create new ones. Launch it normally afterwards.
+- PIN authentication is enforced strictly by the **main process**; credentials are never exposed to the UI layer.
+- Automated lockout protection engages upon repeated unsuccessful attempts to prevent unauthorized access.
+- Sessions automatically terminate upon window reload, **Lock system**, or application close.
+- **Forgot a PIN or locked out?** Contact your system administrator for authorized credentials recovery.
 
-The PIN is a screen lock for a shared terminal. Anyone who can sign in to the Windows account can still copy the database file, so also use a Windows password and BitLocker (or equivalent) on the machine.
-
-Other hardening: the window cannot open popups or navigate away from the app, denies all device permission requests, and error reporting (Sentry, optional) sends no session replay, no performance traces and no user/request data.
+The application runs in a secure, isolated window with strict navigation controls and privacy-respecting diagnostics.
 
 ## Getting started
 
@@ -72,8 +71,12 @@ Prerequisites: Node.js 18+ and Windows (to build the installer).
 ```bash
 npm install
 npm run electron-dev      # rebuilds native modules for Electron, then starts app + dev server
-npm run electron-pack     # builds the Windows installer into dist/
+npm run electron-pack     # builds the Windows installer and unpacked exe into dist/
 ```
+
+The build produces:
+- Standalone portable binary: `dist\win-unpacked\AutoShift.exe`
+- Windows installer setup: `dist\AutoShift Setup 1.0.0.exe`
 
 ### Tests
 

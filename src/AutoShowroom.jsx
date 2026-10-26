@@ -131,6 +131,54 @@ function ManageTechsModal({ techs, onSave, onClose }) {
   );
 }
 
+function AddServiceModal({ plate, techs, onSave, onClose }) {
+  const today = new Date().toISOString().split("T")[0];
+  const nextDueDefault = new Date(Date.now() + 90 * 86400000).toISOString().split("T")[0];
+  const [form, setForm] = useState({
+    plate,
+    type: SERVICE_TYPES[0] || "Routine Maintenance",
+    date: today,
+    nextDue: nextDueDefault,
+    tech: techs[0] || "",
+    cost: "",
+    status: "Completed",
+    notes: ""
+  });
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+  const valid = form.plate && form.type && form.date && form.nextDue && form.tech;
+
+  return (
+    <Modal title={`Add Service Record — ${plate}`} onClose={onClose} width={560}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div style={{ gridColumn: "1/-1" }}>
+          <Select label="Service Type" required value={form.type} onChange={v => set("type", v)} options={SERVICE_TYPES} />
+        </div>
+        <Input label="Service Date" required type="date" value={form.date} onChange={v => set("date", v)} />
+        <Input label="Next Due Date" required type="date" value={form.nextDue} onChange={v => set("nextDue", v)} />
+        <Select label="Technician" required value={form.tech} onChange={v => set("tech", v)} options={techs} />
+        <Input label="Cost (PKR)" type="number" value={form.cost} onChange={v => set("cost", v)} placeholder="e.g. 5000" />
+        <Select label="Status" value={form.status} onChange={v => set("status", v)} options={["Received","In Progress","Waiting for Parts","Completed"]} />
+        <div style={{ gridColumn: "1/-1", display: "flex", flexDirection: "column", gap: 6 }}>
+          <label style={{ fontSize: 11, fontWeight: 700, color: T.muted, letterSpacing: 0.8, textTransform: "uppercase" }}>Notes</label>
+          <textarea
+            value={form.notes} onChange={e => set("notes", e.target.value)}
+            placeholder="Details of parts replaced, diagnosis, etc."
+            style={{
+              background: T.card, border: `1px solid ${T.border}`, borderRadius: 6,
+              padding: "9px 12px", color: T.textBright, fontSize: 13,
+              resize: "vertical", minHeight: 70, fontFamily: "'Barlow', sans-serif",
+            }}
+          />
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
+        <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
+        <Btn disabled={!valid} onClick={() => onSave(form)}>Save Record</Btn>
+      </div>
+    </Modal>
+  );
+}
+
 function EditServiceModal({ service, techs, onSave, onClose }) {
   const [form, setForm] = useState({ ...service });
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
@@ -341,15 +389,22 @@ function Toast({ msg, onDone }) {
 }
 
 // ─── ADD CAR MODAL ────────────────────────────────────────────────────────────
-function AddCarModal({ prefillPlate = "", clients, onSave, onClose }) {
-  const [tab, setTab] = useState("existing"); // "existing" | "new"
-  const [form, setForm] = useState({ plate: prefillPlate, make: "", model: "", year: new Date().getFullYear(), color: "", clientId: "" });
+function AddCarModal({ prefillPlate = "", prefillClientId = "", clients, onSave, onClose }) {
+  const [tab, setTab] = useState(prefillClientId || clients.length > 0 ? "existing" : "new");
+  const [form, setForm] = useState({
+    plate: prefillPlate,
+    make: "",
+    model: "",
+    year: new Date().getFullYear(),
+    color: "",
+    clientId: prefillClientId || clients[0]?.id || ""
+  });
   const [newClient, setNewClient] = useState({ name: "", phone: "", email: "" });
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
   const setNC = (k, v) => setNewClient(p => ({ ...p, [k]: v }));
 
   const validCar = form.plate && form.make && form.model && form.year;
-  const validClient = tab === "existing" ? form.clientId : newClient.name && newClient.phone;
+  const validClient = tab === "existing" ? Boolean(form.clientId) : Boolean(newClient.name && newClient.phone);
 
   return (
     <Modal title="Register New Vehicle" onClose={onClose} width={580}>
@@ -364,7 +419,7 @@ function AddCarModal({ prefillPlate = "", clients, onSave, onClose }) {
       </div>
 
       <div style={{ marginTop: 20, marginBottom: 12, height: 1, background: T.border }} />
-      <p style={{ fontSize: 12, color: T.muted, marginBottom: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8 }}>Client</p>
+      <p style={{ fontSize: 12, color: T.muted, marginBottom: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8 }}>Owner / Client</p>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
         {["existing", "new"].map(t => (
@@ -382,8 +437,24 @@ function AddCarModal({ prefillPlate = "", clients, onSave, onClose }) {
       </div>
 
       {tab === "existing" ? (
-        <Select label="Select Client" required value={form.clientId} onChange={v => set("clientId", v)}
-          options={clients.map(c => ({ value: c.id, label: `${c.name} — ${c.phone}` }))} />
+        clients.length === 0 ? (
+          <div style={{ padding: "12px 14px", background: T.cardHover, borderRadius: 6, border: `1px solid ${T.borderLight}`, fontSize: 13, color: T.muted, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span>No clients registered yet.</span>
+            <button
+              onClick={() => setTab("new")}
+              style={{
+                background: T.accent, color: "#0A0C10", border: "none",
+                borderRadius: 4, padding: "4px 8px", fontSize: 12, fontWeight: 700,
+                cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif"
+              }}
+            >
+              + Create Client
+            </button>
+          </div>
+        ) : (
+          <Select label="Select Client" required value={form.clientId} onChange={v => set("clientId", v)}
+            options={clients.map(c => ({ value: c.id, label: `${c.name} — ${c.phone}` }))} />
+        )
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
           <div style={{ gridColumn: "1/-1" }}>
@@ -455,7 +526,7 @@ function AddApptModal({ data, prefillPlate = "", onSave, onClose }) {
 }
 
 // ─── DASHBOARD VIEW ───────────────────────────────────────────────────────────
-function DashboardView({ data, navigate }) {
+function DashboardView({ data, navigate, onAddCar }) {
   const alerts = data.services.filter(s => alertLevel(s.nextDue) !== "ok");
   const today = new Date().toISOString().split("T")[0];
   const todayAppts = data.appointments.filter(a => a.date === today);
@@ -507,14 +578,40 @@ function DashboardView({ data, navigate }) {
 
   return (
     <div>
-      <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, color: T.textBright, marginBottom: 4 }}>
-          Good morning 👋
-        </h1>
-        <p style={{ color: T.muted, fontSize: 14 }}>
-          {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-        </p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
+        <div>
+          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, color: T.textBright, marginBottom: 4 }}>
+            Good morning 👋
+          </h1>
+          <p style={{ color: T.muted, fontSize: 14 }}>
+            {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+          </p>
+        </div>
+        <Btn icon={<Plus size={16} />} onClick={() => onAddCar("")}>
+          Register Vehicle
+        </Btn>
       </div>
+
+      {data.cars.length === 0 && (
+        <Card style={{ padding: 22, marginBottom: 26, background: T.accentDim, border: `1px solid ${T.accent}44`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ background: T.accent, borderRadius: 8, padding: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Car size={24} color="#0A0C10" />
+            </div>
+            <div>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, fontWeight: 700, color: T.textBright, marginBottom: 2 }}>
+                No vehicles registered yet
+              </div>
+              <div style={{ color: T.muted, fontSize: 13 }}>
+                Get started by registering a vehicle and its owner into the showroom system.
+              </div>
+            </div>
+          </div>
+          <Btn icon={<Plus size={15} />} onClick={() => onAddCar("")}>
+            Register First Vehicle
+          </Btn>
+        </Card>
+      )}
 
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 26 }}>
@@ -676,10 +773,17 @@ function LookupView({ data, navigate, onAddCar }) {
 
   return (
     <div>
-      <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, color: T.textBright, marginBottom: 6 }}>
-        Vehicle Lookup
-      </h1>
-      <p style={{ color: T.muted, marginBottom: 30, fontSize: 14 }}>Search by plate number or vehicle name</p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+        <div>
+          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, color: T.textBright, marginBottom: 6 }}>
+            Vehicle Lookup
+          </h1>
+          <p style={{ color: T.muted, fontSize: 14 }}>Search by plate number or vehicle name</p>
+        </div>
+        <Btn icon={<Plus size={16} />} onClick={() => onAddCar(q || "")}>
+          Register Vehicle
+        </Btn>
+      </div>
 
       <div style={{ position: "relative", maxWidth: 560, marginBottom: 30 }}>
         <Search size={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: T.muted }} />
@@ -750,7 +854,22 @@ function LookupView({ data, navigate, onAddCar }) {
         </div>
       )}
 
-      {!searched && (
+      {!searched && data.cars.length === 0 && (
+        <Card style={{ maxWidth: 560, textAlign: "center", padding: 36 }}>
+          <Car size={40} style={{ display: "block", margin: "0 auto 12px", color: T.muted }} />
+          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, fontWeight: 700, color: T.textBright, marginBottom: 6 }}>
+            No vehicles registered yet
+          </p>
+          <p style={{ color: T.muted, fontSize: 13, marginBottom: 20 }}>
+            Click below to register your first vehicle into the showroom system.
+          </p>
+          <Btn icon={<Plus size={16} />} onClick={() => onAddCar("")} size="lg">
+            Register Vehicle
+          </Btn>
+        </Card>
+      )}
+
+      {!searched && data.cars.length > 0 && (
         <div>
           <p style={{ fontSize: 12, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 14 }}>Recent Vehicles</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -1166,7 +1285,7 @@ function ScheduleView({ data, onAddAppt }) {
 }
 
 // ─── CLIENTS VIEW ─────────────────────────────────────────────────────────────
-function ClientsView({ data, navigate }) {
+function ClientsView({ data, navigate, onAddCar }) {
   const [search, setSearch] = useState("");
   const q = search.toLowerCase();
   const filtered = data.clients.filter(c =>
@@ -1175,8 +1294,15 @@ function ClientsView({ data, navigate }) {
 
   return (
     <div>
-      <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, color: T.textBright, marginBottom: 6 }}>Clients</h1>
-      <p style={{ color: T.muted, fontSize: 14, marginBottom: 20 }}>All registered customers and their vehicles</p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+        <div>
+          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, color: T.textBright, marginBottom: 6 }}>Clients</h1>
+          <p style={{ color: T.muted, fontSize: 14 }}>All registered customers and their vehicles</p>
+        </div>
+        <Btn icon={<Plus size={16} />} onClick={() => onAddCar("")}>
+          Register Vehicle
+        </Btn>
+      </div>
 
       <div style={{ position: "relative", maxWidth: 420, marginBottom: 20 }}>
         <Search size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: T.muted }} />
@@ -1215,12 +1341,24 @@ function ClientsView({ data, navigate }) {
                 ))}
               </div>
               <div style={{ height: 1, background: T.border, marginBottom: 12 }} />
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                 {cars.map(car => (
                   <div key={car.plate} onClick={() => navigate("car", car.plate)} style={{ cursor: "pointer" }}>
                     <Plate plate={car.plate} size="sm" />
                   </div>
                 ))}
+                <button
+                  onClick={() => onAddCar("", client.id)}
+                  style={{
+                    padding: "3px 8px", borderRadius: 4, background: "transparent",
+                    border: `1px dashed ${T.border}`, color: T.muted, fontSize: 11,
+                    cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
+                    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600
+                  }}
+                  title={`Register new vehicle for ${client.name}`}
+                >
+                  <Plus size={11} /> Add Vehicle
+                </button>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10 }}>
                 <span style={{ fontSize: 11, color: T.muted }}>{allServices.length} services</span>
@@ -1235,7 +1373,7 @@ function ClientsView({ data, navigate }) {
 }
 
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
-function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast, onLock, onDataChanged }) {
+function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast, onLock, onDataChanged, onAddCar }) {
   const [dialog, setDialog] = useState(null); // "adminPin" | "changePin"
   const [backup, setBackup] = useState({ dir: "", lastBackupAt: null });
   const [backingUp, setBackingUp] = useState(false);
@@ -1278,6 +1416,21 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: "14px 10px" }}>
+        {/* Quick Action: Register Vehicle */}
+        <button
+          onClick={() => onAddCar("")}
+          style={{
+            width: "100%", padding: "10px 12px", marginBottom: "14px",
+            background: T.accent, color: "#0A0C10",
+            border: "none", borderRadius: "8px", cursor: "pointer",
+            fontSize: "13px", fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            boxShadow: `0 2px 8px rgba(0,0,0,0.2)`, transition: "all 0.15s"
+          }}
+        >
+          <Plus size={16} strokeWidth={2.5} /> REGISTER VEHICLE
+        </button>
+
         {/* Data / backup status */}
         <div style={{
           padding: "10px 12px", marginBottom: "16px", borderRadius: "8px",
@@ -1524,6 +1677,7 @@ export default function App() {
   const [modal, setModal] = useState(null); // "addService" | "addCar" | "addAppt" | "editCar" | "manageTechs" | "editService"
   const [techs, setTechs] = useState(DEFAULT_TECHNICIANS);
   const [pendingPlate, setPendingPlate] = useState("");
+  const [pendingClientId, setPendingClientId] = useState("");
   const [toast, setToast] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [initError, setInitError] = useState(null);
@@ -1531,6 +1685,12 @@ export default function App() {
 
   const refreshData = async () => {
     setData(await databaseManager.loadAll());
+  };
+
+  const openAddCar = (plate = "", clientId = "") => {
+    setPendingPlate(plate);
+    setPendingClientId(clientId);
+    setModal("addCar");
   };
 
   // Load data only once the PIN gate has opened (the main process refuses reads while locked)
@@ -1717,16 +1877,16 @@ export default function App() {
         @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
 
-      <Sidebar active={view} navigate={navigate} alertCount={alertCount} isAdmin={isAdmin} setIsAdmin={setIsAdmin} showToast={showToast} onLock={handleLock} onDataChanged={refreshData} />
+      <Sidebar active={view} navigate={navigate} alertCount={alertCount} isAdmin={isAdmin} setIsAdmin={setIsAdmin} showToast={showToast} onLock={handleLock} onDataChanged={refreshData} onAddCar={openAddCar} />
 
       {/* Main */}
       <div style={{ marginLeft: 220, padding: "32px 36px", minHeight: "100vh", maxWidth: 1200 }}>
-        {view === "dashboard" && <DashboardView data={data} navigate={navigate} />}
+        {view === "dashboard" && <DashboardView data={data} navigate={navigate} onAddCar={openAddCar} />}
         {view === "lookup" && (
           <LookupView
             data={data}
             navigate={navigate}
-            onAddCar={(plate) => { setPendingPlate(plate); setModal("addCar"); }}
+            onAddCar={openAddCar}
           />
         )}
         {view === "car" && (
@@ -1744,7 +1904,7 @@ export default function App() {
         )}
         {view === "alerts" && <AlertsView data={data} navigate={navigate} />}
         {view === "schedule" && <ScheduleView data={data} onAddAppt={() => setModal("addAppt")} />}
-        {view === "clients" && <ClientsView data={data} navigate={navigate} />}
+        {view === "clients" && <ClientsView data={data} navigate={navigate} onAddCar={openAddCar} />}
       </div>
 
       {/* Modals */}
@@ -1752,7 +1912,7 @@ export default function App() {
         <AddServiceModal plate={selectedPlate} techs={techs} onSave={handleAddService} onClose={() => setModal(null)} />
       )}
       {modal === "addCar" && (
-        <AddCarModal prefillPlate={pendingPlate} clients={data.clients} onSave={handleAddCar} onClose={() => setModal(null)} />
+        <AddCarModal prefillPlate={pendingPlate} prefillClientId={pendingClientId} clients={data.clients} onSave={handleAddCar} onClose={() => setModal(null)} />
       )}
       {modal === "addAppt" && (
         <AddApptModal data={data} prefillPlate={view === "car" ? selectedPlate : ""} onSave={handleAddAppt} onClose={() => setModal(null)} />
