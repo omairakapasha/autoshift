@@ -40,6 +40,17 @@ export const databaseManager = {
   exportJson: () => api().db.exportJson(),
   importJson: (payload) => api().db.importJson(payload),
 
+  // Access control. The session lives in the main process; these only relay.
+  auth: {
+    status: () => api().auth.status(),
+    setup: (staffPin, adminPin) => api().auth.setup(staffPin, adminPin),
+    unlock: (pin) => api().auth.unlock(pin),
+    elevate: (pin) => api().auth.elevate(pin),
+    drop: () => api().auth.drop(),
+    lock: () => api().auth.lock(),
+    changePin: (which, newPin, adminPin) => api().auth.changePin(which, newPin, adminPin),
+  },
+
   backupNow: () => api().backup.now(),
   backupInfo: () => api().backup.info(),
   chooseBackupDir: () => api().backup.chooseDir(),

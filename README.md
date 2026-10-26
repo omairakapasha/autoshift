@@ -42,6 +42,29 @@ There is no server, account or internet connection required. All data stays on t
 
 The database file is `autoshift.db` in the app's user-data folder (typically `%APPDATA%\AutoShift` on Windows).
 
+## Access control
+
+On first launch the owner is asked to create two PINs (4 to 12 digits, and they must differ):
+
+| | Staff PIN | Admin PIN |
+|---|---|---|
+| Open the app, view and add clients, vehicles, services, appointments, edit records | yes | yes |
+| Backup now, export | yes | yes |
+| Delete records, import a backup, change the backup folder, manage the staff list, change PINs | no | yes |
+
+Staff unlock the app with the staff PIN; the owner switches on **Admin mode** from the sidebar by entering the admin PIN (or unlocks directly with it).
+
+- PINs are stored only as salted **scrypt** hashes, never in plaintext, and never sent to the UI.
+- The session is held by the **main process**, which checks it on every request. Editing the UI cannot bypass the PIN.
+- After 5 wrong attempts the app locks out, with a delay that doubles up to 15 minutes. The lockout survives restarts.
+- Any page reload, **Lock system**, or restart ends the session.
+- **Forgot a PIN?** Close AutoShift, then from a Command Prompt on the same machine run:
+  `set AUTOSHIFT_RESET_PINS=1 && "C:\Path\To\AutoShift.exe"`. This clears the PINs (your data is untouched) and the app asks you to create new ones. Launch it normally afterwards.
+
+The PIN is a screen lock for a shared terminal. Anyone who can sign in to the Windows account can still copy the database file, so also use a Windows password and BitLocker (or equivalent) on the machine.
+
+Other hardening: the window cannot open popups or navigate away from the app, denies all device permission requests, and error reporting (Sentry, optional) sends no session replay, no performance traces and no user/request data.
+
 ## Getting started
 
 Prerequisites: Node.js 18+ and Windows (to build the installer).
@@ -57,7 +80,7 @@ npm run electron-pack     # builds the Windows installer into dist/
 ```bash
 npm run rebuild:node      # once, if you have run electron-dev (restores the Node build of better-sqlite3)
 npm run test:db           # SQLite layer, IPC, Electron wiring (Node)
-npm test                  # React UI and renderer client (jsdom)
+npm test                  # React UI, PIN gate and renderer client (jsdom)
 ```
 
 `better-sqlite3` is a native module, so it is compiled for either Node (tests) or Electron (running the app). `electron-dev` switches it to Electron; `rebuild:node` switches it back. `electron-pack` rebuilds it for Electron automatically.
@@ -69,7 +92,7 @@ npm test                  # React UI and renderer client (jsdom)
 
 ## Known limitations
 
-- The staff and admin PINs are still read from `REACT_APP_*` variables at build time. This is a screen lock, not real access control; it is addressed on the `security/electron-hardening` branch.
+- No Content-Security-Policy is set yet (it needs testing against the packaged app and the dev server).
 - The installer is unsigned and there is no auto-update yet.
 - No demo data is loaded: a fresh install starts empty.
 
