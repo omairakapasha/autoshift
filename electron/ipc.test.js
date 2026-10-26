@@ -4,15 +4,20 @@ const os = require('os');
 const path = require('path');
 const { AutoShiftDatabase } = require('./db/Database');
 const { registerIpc, scheduleBackups } = require('./ipc');
+const { AuthService } = require('./auth');
 
-function setup(extra = {}) {
+function setup(extra = {}, { signedIn = 'admin' } = {}) {
   const handlers = {};
   const ipcMain = { handle: (ch, fn) => { handlers[ch] = fn; } };
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'as-ipc-'));
   const db = new AutoShiftDatabase(':memory:');
-  const api = registerIpc(ipcMain, db, { defaultBackupDir: path.join(dir, 'backups'), ...extra });
+  const auth = new AuthService(db);
+  auth.setup('1111', '222222');                 // leaves an admin session
+  if (signedIn === 'staff') auth.drop();
+  if (signedIn === 'none') auth.lock();
+  const api = registerIpc(ipcMain, db, { auth, defaultBackupDir: path.join(dir, 'backups'), ...extra });
   const call = (ch, ...a) => handlers[ch]({}, ...a);
-  return { db, call, dir, api, handlers };
+  return { db, call, dir, api, handlers, auth };
 }
 
 test('success is wrapped as {ok,data}; errors as {ok:false,error} (never thrown across IPC)', async () => {
@@ -80,5 +85,67 @@ describe('scheduleBackups', () => {
     await new Promise((r) => setImmediate(r));
     expect(onError).toHaveBeenCalledWith('Automatic backup failed:', expect.any(Error));
     stop();
+  });
+});
+
+describe('session enforcement (main process, not UI)', () => {
+  test('everything data-related is refused while locked', async () => {
+    const { call } = setup({}, { signedIn: 'none' });
+    for (const [ch, args] of [
+      ['db:read', ['clients']], ['db:create', ['clients', { name: 'x', phone: '1' }]],
+      ['db:update', ['clients', 'id', {}]], ['db:delete', ['cars', 'id']], ['db:stats', []],
+      ['db:exportJson', []], ['db:importJson', [{}]], ['db:getSetting', ['technicians']],
+      ['db:setSetting', ['technicians', []]], ['backup:now', []], ['backup:info', []], ['backup:chooseDir', []],
+    ]) {
+      expect(await call(ch, ...args)).toEqual({ ok: false, error: 'AutoShift is locked' });
+    }
+  });
+
+  test('staff can work with data but not delete, import, or reconfigure', async () => {
+    const { call } = setup({}, { signedIn: 'staff' });
+    expect((await call('db:create', 'clients', { name: 'A', phone: '1' })).ok).toBe(true);
+    expect((await call('db:read', 'clients')).ok).toBe(true);
+    expect((await call('backup:now')).ok).toBe(true);
+    for (const [ch, args] of [
+      ['db:delete', ['clients', 'x']], ['db:importJson', [{ clients: [] }]],
+      ['db:setSetting', ['technicians', ['x']]], ['backup:chooseDir', []],
+    ]) {
+      expect(await call(ch, ...args)).toEqual({ ok: false, error: 'Admin PIN required' });
+    }
+  });
+
+  test('the renderer can never read or write auth/backup internals through settings', async () => {
+    const { call, db } = setup();
+    for (const key of ['auth', 'authLock', 'backupDir', 'lastBackupAt']) {
+      expect((await call('db:getSetting', key)).ok).toBe(false);
+      expect((await call('db:setSetting', key, { evil: true })).ok).toBe(false);
+    }
+    expect(db.getSetting('auth').staff.hash).toBeTruthy();   // untouched
+    expect((await call('db:setSetting', 'technicians', ['A'])).ok).toBe(true);
+  });
+
+  test('auth channels never leak hashes or salts', async () => {
+    const { call } = setup();
+    const st = await call('auth:status');
+    expect(JSON.stringify(st)).not.toMatch(/hash|salt/);
+  });
+
+  test('admin elevation via IPC, and dropping back to staff', async () => {
+    const { call } = setup({}, { signedIn: 'staff' });
+    expect((await call('auth:elevate', '000000')).data.role).toBe('staff');   // wrong PIN: stays staff
+    expect((await call('auth:elevate', '222222')).data.role).toBe('admin');
+    expect((await call('db:delete', 'clients', 'x')).ok).toBe(true);
+    expect((await call('auth:drop')).data.role).toBe('staff');
+    expect((await call('db:delete', 'clients', 'x')).ok).toBe(false);
+  });
+
+  test('elevate requires an unlocked session first', async () => {
+    const { call } = setup({}, { signedIn: 'none' });
+    expect(await call('auth:elevate', '222222')).toEqual({ ok: false, error: 'AutoShift is locked' });
+  });
+
+  test('automatic backups still run while the app is locked', async () => {
+    const { api } = setup({}, { signedIn: 'none' });
+    await expect(api.runBackup()).resolves.toMatchObject({ path: expect.stringContaining('autoshift-') });
   });
 });

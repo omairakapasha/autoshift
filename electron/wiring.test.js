@@ -12,8 +12,10 @@ const path = require('path');
 let userData;
 const running = [];
 
-function loadMain(lock = true) {
-  userData = fs.mkdtempSync(path.join(os.tmpdir(), 'as-ud-')); // one data folder per app instance
+function loadMainAt(dir) { return loadMain(true, dir); }
+
+function loadMain(lock = true, dir = null) {
+  userData = dir || fs.mkdtempSync(path.join(os.tmpdir(), 'as-ud-')); // one data folder per app instance
   jest.resetModules();
   const handlers = {};
   const windows = [];
@@ -30,13 +32,20 @@ function loadMain(lock = true) {
     BrowserWindow: Object.assign(
       jest.fn(function (opts) {
         this.opts = opts; this.loadFile = jest.fn(); this.loadURL = jest.fn();
-        this.on = jest.fn(); this.webContents = { openDevTools: jest.fn() };
+        this.on = jest.fn();
+        this.webContents = {
+          openDevTools: jest.fn(),
+          setWindowOpenHandler: jest.fn(),
+          on: jest.fn((ev, fn) => { (this.wcHandlers[ev] = this.wcHandlers[ev] || []).push(fn); }),
+        };
+        this.wcHandlers = {};
         windows.push(this);
       }),
       { getAllWindows: () => windows }
     ),
     ipcMain: { handle: jest.fn((ch, fn) => { handlers[ch] = fn; }) },
     dialog: { showErrorBox: jest.fn(), showOpenDialog: jest.fn() },
+    session: { defaultSession: { setPermissionRequestHandler: jest.fn() } },
   };
   jest.doMock('electron', () => electron, { virtual: true });
   require('../public/electron.js');
@@ -75,6 +84,51 @@ test('a second instance quits immediately without touching the database or openi
   expect(fs.readdirSync(userData)).toEqual([]);
 });
 
+test('popups, off-app navigation and permission requests are blocked', async () => {
+  const { windows, electron } = loadMain();
+  await new Promise((r) => setImmediate(r));
+  const w = windows[0];
+  expect(w.webContents.setWindowOpenHandler.mock.calls[0][0]()).toEqual({ action: 'deny' });
+  const evil = { preventDefault: jest.fn() };
+  w.wcHandlers['will-navigate'][0](evil, 'https://evil.example/phish');
+  expect(evil.preventDefault).toHaveBeenCalled();
+  const fine = { preventDefault: jest.fn() };
+  w.wcHandlers['will-navigate'][0](fine, 'file:///app/build/index.html');
+  expect(fine.preventDefault).not.toHaveBeenCalled();
+  const cb = jest.fn();
+  electron.session.defaultSession.setPermissionRequestHandler.mock.calls[0][0](null, 'media', cb);
+  expect(cb).toHaveBeenCalledWith(false);
+});
+
+test('a full page reload ends the session; in-page navigation does not', async () => {
+  const { windows, handlers } = loadMain();
+  await new Promise((r) => setImmediate(r));
+  const call = (ch, ...a) => handlers[ch]({}, ...a);
+  await call('auth:setup', '1111', '222222');                  // owner signed in
+  expect((await call('db:read', 'clients')).ok).toBe(true);
+  const nav = windows[0].wcHandlers['did-start-navigation'][0];
+  nav({}, 'file:///app#x', true, true);                        // hash change
+  expect((await call('db:read', 'clients')).ok).toBe(true);
+  nav({}, 'file:///app/index.html', false, true);              // reload
+  expect((await call('db:read', 'clients'))).toEqual({ ok: false, error: 'AutoShift is locked' });
+});
+
+test('AUTOSHIFT_RESET_PINS=1 clears the PINs at launch', async () => {
+  const first = loadMain();
+  await new Promise((r) => setImmediate(r));
+  await first.handlers['auth:setup']({}, '1111', '222222');
+  first.appHandlers['before-quit']({ preventDefault() {} });
+  await new Promise((r) => setTimeout(r, 150));
+  // relaunch against the same data folder with the reset flag
+  const saved = userData;
+  process.env.AUTOSHIFT_RESET_PINS = '1';
+  const second = (() => { const keep = userData; const r = loadMainAt(saved); return r; })();
+  await new Promise((r) => setImmediate(r));
+  delete process.env.AUTOSHIFT_RESET_PINS;
+  const status = await second.handlers['auth:status']({});
+  expect(status.data.configured).toBe(false);
+});
+
 test('database file is created in userData; quit waits for the in-flight backup, then closes', async () => {
   const { appHandlers, electron } = loadMain();
   await new Promise((r) => setImmediate(r)); // startup backup is now in flight
@@ -101,7 +155,7 @@ test('preload channels and main-process handlers match exactly', async () => {
   expect(Object.keys(handlers).sort()).toEqual(used);
 });
 
-test('renderer-facing bridge exposes only db + backup (no fs / ipcRenderer leak)', () => {
+test('renderer-facing bridge exposes only db, auth and backup (no fs / ipcRenderer leak)', () => {
   jest.resetModules();
   const exposed = {};
   jest.doMock('electron', () => ({
@@ -110,7 +164,7 @@ test('renderer-facing bridge exposes only db + backup (no fs / ipcRenderer leak)
   }), { virtual: true });
   require('./preload.js');
   expect(Object.keys(exposed)).toEqual(['autoshift']);
-  expect(Object.keys(exposed.autoshift).sort()).toEqual(['backup', 'db']);
+  expect(Object.keys(exposed.autoshift).sort()).toEqual(['auth', 'backup', 'db']);
 });
 
 test('preload unwraps error envelopes into thrown Errors', async () => {

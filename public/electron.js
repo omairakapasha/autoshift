@@ -1,14 +1,16 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, session } = require('electron');
 const path = require('path');
 
 const isDev = !app.isPackaged;
 const { AutoShiftDatabase } = require('../electron/db/Database');
 const { registerIpc, scheduleBackups } = require('../electron/ipc');
+const { AuthService } = require('../electron/auth');
 
 let mainWindow = null;
 let database = null;
 let stopBackups = null;
 let ipcApi = null;
+let auth = null;
 let readyToQuit = false;
 
 function createWindow() {
@@ -24,6 +26,18 @@ function createWindow() {
     },
     icon: path.join(__dirname, 'favicon.ico'),
     title: 'AutoShift Showroom Management',
+  });
+
+  // The app is a closed system: no popups, no navigating away, no permissions.
+  const appOrigin = isDev ? 'http://localhost:3000' : 'file://';
+  const wc = mainWindow.webContents;
+  wc.setWindowOpenHandler(() => ({ action: 'deny' }));
+  wc.on('will-navigate', (event, url) => {
+    if (!url.startsWith(appOrigin)) event.preventDefault();
+  });
+  // Any full page load (reload, dev refresh) ends the session: PIN required again.
+  wc.on('did-start-navigation', (_event, _url, isInPlace, isMainFrame) => {
+    if (isMainFrame && !isInPlace && auth) auth.lock();
   });
 
   if (isDev) {
@@ -61,7 +75,16 @@ if (!app.requestSingleInstanceLock()) {
       return;
     }
 
+    auth = new AuthService(database);
+    if (process.env.AUTOSHIFT_RESET_PINS === '1') {
+      // Owner recovery for a forgotten PIN. Requires launching the app from the machine itself.
+      auth.reset();
+    }
+
+    session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
+
     ipcApi = registerIpc(ipcMain, database, {
+      auth,
       defaultBackupDir: path.join(userData, 'backups'),
       dialog,
       getWindow: () => mainWindow,

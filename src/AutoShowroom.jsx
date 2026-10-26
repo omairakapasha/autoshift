@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { databaseManager } from "./database/index.js";
 import PinGate from "./components/PinGate";
+import { AdminPinDialog, ChangePinDialog } from "./components/PinDialogs";
 
 // ─── UTILITIES ───────────────────────────────────────────────────────────────
 
@@ -1234,7 +1235,8 @@ function ClientsView({ data, navigate }) {
 }
 
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
-function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast }) {
+function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast, onLock, onDataChanged }) {
+  const [dialog, setDialog] = useState(null); // "adminPin" | "changePin"
   const [backup, setBackup] = useState({ dir: "", lastBackupAt: null });
   const [backingUp, setBackingUp] = useState(false);
 
@@ -1327,16 +1329,12 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast 
       {/* Footer */}
       <div style={{ padding: "14px 16px", borderTop: `1px solid ${T.border}` }}>
         <button 
-          onClick={() => {
+          onClick={async () => {
             if (isAdmin) {
+              try { await databaseManager.auth.drop(); } catch (e) { /* session already gone */ }
               setIsAdmin(false);
             } else {
-              const pin = window.prompt("Enter Admin PIN to enable owner actions:");
-              if (pin && process.env.REACT_APP_ADMIN_PIN && pin.trim() === process.env.REACT_APP_ADMIN_PIN.trim()) {
-                setIsAdmin(true);
-              } else {
-                alert("Incorrect Admin PIN.");
-              }
+              setDialog("adminPin");
             }
           }}
           style={{
@@ -1363,6 +1361,20 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast 
             }}
           >
             <Users size={12} /> MANAGE STAFF
+          </button>
+        )}
+
+        {isAdmin && (
+          <button
+            onClick={() => setDialog("changePin")}
+            style={{
+              width: "100%", padding: "6px", marginBottom: "10px",
+              background: T.infoDim, color: T.info, border: `1px solid ${T.info}33`,
+              borderRadius: "6px", cursor: "pointer", fontSize: "11px", fontWeight: "bold",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6
+            }}
+          >
+            <Shield size={12} /> CHANGE PINS
           </button>
         )}
 
@@ -1405,7 +1417,7 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast 
                     if (window.confirm("Restore from backup? This will merge with existing local data.")) {
                       const counts = await databaseManager.importJson(data);
                       alert(`Imported ${counts.clients} clients, ${counts.cars} vehicles, ${counts.services} services, ${counts.appointments} appointments.`);
-                      window.location.reload();
+                      onDataChanged();
                     }
                   } catch (err) {
                     alert("Import failed: " + err.message);
@@ -1469,10 +1481,7 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast 
           CHANGE BACKUP FOLDER
         </button>
         <button 
-          onClick={() => {
-            sessionStorage.removeItem('autoshift_unlocked');
-            window.location.reload();
-          }}
+          onClick={onLock}
           style={{
             width: "100%", padding: "6px", marginBottom: "10px",
             background: T.sidebar, color: "#FFFFFF",
@@ -1483,6 +1492,19 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast 
         >
           LOCK SYSTEM
         </button>
+
+        {dialog === "adminPin" && (
+          <AdminPinDialog
+            onSuccess={() => { setDialog(null); setIsAdmin(true); showToast("Admin mode on"); }}
+            onClose={() => setDialog(null)}
+          />
+        )}
+        {dialog === "changePin" && (
+          <ChangePinDialog
+            onDone={(which) => { setDialog(null); showToast(`${which === "staff" ? "Staff" : "Admin"} PIN changed`); }}
+            onClose={() => setDialog(null)}
+          />
+        )}
 
         <div style={{ fontSize: 11, color: "#FFFFFF", opacity: 0.8 }}>AutoShift MVP v1.0</div>
         <div style={{ fontSize: 10, color: "#FFFFFF", opacity: 0.6, marginTop: 2 }}>
@@ -1505,16 +1527,18 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [initError, setInitError] = useState(null);
-  const [isUnlocked, setIsUnlocked] = useState(sessionStorage.getItem('autoshift_unlocked') === 'true');
+  const [isUnlocked, setIsUnlocked] = useState(false);  // the real session lives in the main process
 
   const refreshData = async () => {
     setData(await databaseManager.loadAll());
   };
 
-  // Load everything from the local database on startup
+  // Load data only once the PIN gate has opened (the main process refuses reads while locked)
   useEffect(() => {
+    if (!isUnlocked) return;
     (async () => {
       try {
+        setInitError(null);
         await refreshData();
         const saved = await databaseManager.getSetting("technicians", null);
         if (Array.isArray(saved) && saved.length) setTechs(saved);
@@ -1523,7 +1547,16 @@ export default function App() {
         setInitError(error.message || String(error));
       }
     })();
-  }, []);
+  }, [isUnlocked]);
+
+  const handleLock = async () => {
+    try { await databaseManager.auth.lock(); } catch (e) { /* already locked */ }
+    setIsAdmin(false);
+    setModal(null);
+    setData(null);
+    setIsUnlocked(false);
+  };
+
 
   const navigate = (v, id) => {
     if (v === "editService") {
@@ -1639,9 +1672,9 @@ export default function App() {
   };
 
   if (!isUnlocked) {
-    return <PinGate onUnlock={() => {
+    return <PinGate onUnlock={(role) => {
+      setIsAdmin(role === "admin");
       setIsUnlocked(true);
-      sessionStorage.setItem('autoshift_unlocked', 'true');
     }} />;
   }
 
@@ -1654,7 +1687,7 @@ export default function App() {
               <AlertTriangle size={48} style={{ color: T.danger, display: "block", margin: "0 auto 16px" }} />
               <div style={{ fontFamily: "'Barlow Condensed', sans-serif", color: T.textBright, fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Could not open the database</div>
               <div style={{ color: T.muted, fontSize: 14, lineHeight: 1.5, marginBottom: 20 }}>{initError}</div>
-              <Btn variant="ghost" onClick={() => window.location.reload()}>Retry</Btn>
+              <Btn variant="ghost" onClick={() => { setData(null); setInitError(null); setIsUnlocked(false); }}>Retry</Btn>
             </>
           ) : (
             <>
@@ -1684,7 +1717,7 @@ export default function App() {
         @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
 
-      <Sidebar active={view} navigate={navigate} alertCount={alertCount} isAdmin={isAdmin} setIsAdmin={setIsAdmin} showToast={showToast} />
+      <Sidebar active={view} navigate={navigate} alertCount={alertCount} isAdmin={isAdmin} setIsAdmin={setIsAdmin} showToast={showToast} onLock={handleLock} onDataChanged={refreshData} />
 
       {/* Main */}
       <div style={{ marginLeft: 220, padding: "32px 36px", minHeight: "100vh", maxWidth: 1200 }}>

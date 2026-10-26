@@ -21,6 +21,15 @@ contextBridge.exposeInMainWorld('autoshift', {
     exportJson: () => call('db:exportJson'),
     importJson: (payload) => call('db:importJson', payload),
   },
+  auth: {
+    status: () => call('auth:status'),
+    setup: (staffPin, adminPin) => call('auth:setup', staffPin, adminPin),
+    unlock: (pin) => call('auth:unlock', pin),
+    elevate: (pin) => call('auth:elevate', pin),
+    drop: () => call('auth:drop'),
+    lock: () => call('auth:lock'),
+    changePin: (which, newPin, adminPin) => call('auth:changePin', which, newPin, adminPin),
+  },
   backup: {
     now: () => call('backup:now'),
     info: () => call('backup:info'),
