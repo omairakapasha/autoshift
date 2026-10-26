@@ -9,19 +9,20 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "electron-dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
-    "electron-pack": "npm run build && electron-builder build --win --publish never"
+    "electron-dev": "npm run rebuild:electron && concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron-pack": "npm run build && electron-builder build --win --publish never",
+    "rebuild:electron": "electron-builder install-app-deps",
+    "rebuild:node": "npm rebuild better-sqlite3",
+    "test:db": "jest --config jest.electron.config.js"
   },
   "build": {
     "appId": "com.autoshift.showroom",
     "productName": "AutoShift",
-    "extraResources": [
-      "configure_showroom.bat"
-    ],
     "files": [
       "build/**/*",
       "public/electron.js",
-      ".env"
+      "electron/**/*",
+      "package.json"
     ],
     "directories": {
       "output": "dist"
@@ -29,7 +30,10 @@
     "win": {
       "target": "nsis",
       "icon": "public/favicon.ico"
-    }
+    },
+    "asarUnpack": [
+      "**/node_modules/better-sqlite3/**"
+    ]
   },
   "keywords": [
     "react",
@@ -41,9 +45,7 @@
   "license": "ISC",
   "dependencies": {
     "@sentry/react": "^10.51.0",
-    "@supabase/supabase-js": "^2.39.0",
-    "dotenv": "^17.4.2",
-    "electron-is-dev": "^3.0.1",
+    "better-sqlite3": "^13.0.3",
     "lucide-react": "^0.263.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

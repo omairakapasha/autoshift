@@ -3,12 +3,10 @@ import {
   LayoutDashboard, Search, Car, Bell, CalendarDays, Users,
   Plus, AlertTriangle, CheckCircle2, Clock, Wrench, ChevronRight,
   ArrowLeft, X, Phone, Mail, User, Zap, TrendingUp, FileText,
-  MoreVertical, RefreshCw, Shield, Cloud, CloudOff,
+  MoreVertical, RefreshCw, Shield,
   Download, Upload
 } from "lucide-react";
-import { supabase } from "./supabaseClient";
-import { databaseManager, localDatabase, SYNC_STATUS } from "./database/index.js";
-import { validateEnvironment, VALIDATION_STATUS } from "./database/SchemaValidator";
+import { databaseManager } from "./database/index.js";
 import PinGate from "./components/PinGate";
 
 // ─── UTILITIES ───────────────────────────────────────────────────────────────
@@ -21,13 +19,6 @@ function formatLastSynced(iso) {
   const hrs = Math.floor(diff / 60);
   if (hrs < 24) return `${hrs}h ago`;
   return new Date(iso).toLocaleDateString();
-}
-
-function SyncIcon({ status, size = 14 }) {
-  if (status === SYNC_STATUS.SYNCED) return <CheckCircle2 size={size} color={T.success} title="Synced to Cloud" />;
-  if (status === SYNC_STATUS.PENDING) return <Clock size={size} color={T.warning} title="Pending Sync" />;
-  if (status === SYNC_STATUS.CONFLICT) return <AlertTriangle size={size} color={T.danger} title="Sync Conflict" />;
-  return <CloudOff size={size} color={T.muted} title="Local Only" />;
 }
 
 function daysUntil(d) {
@@ -53,38 +44,6 @@ function alertLevel(nextDue) {
   if (d <= 30) return "upcoming";
   return "ok";
 }
-
-// ─── SEED DATA ────────────────────────────────────────────────────────────────
-const SEED = {
-  clients: [
-    { id: "c1", name: "Ahmed Raza", phone: "+92-300-1234567", email: "ahmed.raza@gmail.com", since: "2023-06-15" },
-    { id: "c2", name: "Sara Khan", phone: "+92-321-9876543", email: "sara.khan@gmail.com", since: "2023-09-01" },
-    { id: "c3", name: "Usman Ali", phone: "+92-333-5551234", email: "usman.ali@gmail.com", since: "2024-01-20" },
-    { id: "c4", name: "Fatima Malik", phone: "+92-345-7778889", email: "fatima.malik@gmail.com", since: "2024-04-10" },
-  ],
-  cars: [
-    { plate: "LHR-2341", make: "Toyota", model: "Corolla", year: 2020, color: "Graphite Silver", clientId: "c1" },
-    { plate: "ISB-8872", make: "Honda", model: "Civic", year: 2022, color: "Midnight Black", clientId: "c2" },
-    { plate: "KHI-5519", make: "Suzuki", model: "Swift", year: 2019, color: "Pearl White", clientId: "c3" },
-    { plate: "LHR-9001", make: "Hyundai", model: "Tucson", year: 2023, color: "Cobalt Blue", clientId: "c4" },
-    { plate: "FSD-4433", make: "Toyota", model: "Prado", year: 2021, color: "Aspen White", clientId: "c1" },
-  ],
-  services: [
-    { id: "s1", plate: "LHR-2341", type: "Oil Change", date: "2025-11-15", nextDue: "2026-05-15", cost: 3500, status: "Completed", tech: "Bilal Ahmed", notes: "5W-30 synthetic, 4 litres" },
-    { id: "s2", plate: "LHR-2341", type: "Brake Inspection", date: "2025-09-01", nextDue: "2026-09-01", cost: 2000, status: "Completed", tech: "Imran Qureshi", notes: "Front brake pads replaced" },
-    { id: "s3", plate: "ISB-8872", type: "Oil Change", date: "2025-12-10", nextDue: "2026-05-04", cost: 4200, status: "Completed", tech: "Bilal Ahmed", notes: "5W-40 semi-synthetic" },
-    { id: "s4", plate: "KHI-5519", type: "Full Service", date: "2024-08-20", nextDue: "2025-08-20", cost: 12000, status: "Completed", tech: "Hassan Malik", notes: "All filters replaced, timing belt checked" },
-    { id: "s5", plate: "LHR-9001", type: "Oil Change", date: "2026-01-20", nextDue: "2026-07-20", cost: 5500, status: "Completed", tech: "Bilal Ahmed", notes: "Mobil 1 0W-40 full synthetic" },
-    { id: "s6", plate: "FSD-4433", type: "Transmission Service", date: "2025-10-05", nextDue: "2026-10-05", cost: 8500, status: "Completed", tech: "Imran Qureshi", notes: "ATF drained and refilled" },
-    { id: "s7", plate: "ISB-8872", type: "AC Service", date: "2026-02-14", nextDue: "2026-05-05", cost: 3000, status: "Completed", tech: "Hassan Malik", notes: "Refrigerant recharged, cabin filter replaced" },
-  ],
-  appointments: [
-    { id: "a1", plate: "LHR-2341", clientId: "c1", date: "2026-05-05", time: "10:00 AM", type: "Oil Change", status: "Confirmed" },
-    { id: "a2", plate: "ISB-8872", clientId: "c2", date: "2026-05-05", time: "02:00 PM", type: "AC Service Follow-up", status: "Confirmed" },
-    { id: "a3", plate: "KHI-5519", clientId: "c3", date: "2026-05-07", time: "11:00 AM", type: "Full Service", status: "Pending" },
-    { id: "a4", plate: "FSD-4433", clientId: "c1", date: "2026-05-08", time: "09:00 AM", type: "General Inspection", status: "Confirmed" },
-  ],
-};
 
 // ─── THEME ────────────────────────────────────────────────────────────────────
 const T = {
@@ -377,71 +336,6 @@ function Toast({ msg, onDone }) {
       <CheckCircle2 size={16} style={{ marginRight: 8, verticalAlign: "middle" }} />
       {msg}
     </div>
-  );
-}
-
-function OfflineBanner() {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  useEffect(() => {
-    const h = () => setIsOnline(navigator.onLine);
-    window.addEventListener('online', h); window.addEventListener('offline', h);
-    return () => { window.removeEventListener('online', h); window.removeEventListener('offline', h); };
-  }, []);
-
-  if (isOnline) return null;
-  return (
-    <div style={{
-      background: T.danger, color: "#FFFFFF", padding: "8px 20px",
-      textAlign: "center", fontSize: 13, fontWeight: 700,
-      fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: 1,
-      position: "sticky", top: 0, zIndex: 1100,
-      display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-      boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
-    }}>
-      <CloudOff size={16} /> YOU ARE CURRENTLY OFFLINE. CHANGES WILL BE SAVED LOCALLY AND SYNCED WHEN RECONNECTED.
-    </div>
-  );
-}
-function AddServiceModal({ plate, techs, onSave, onClose }) {
-  const [form, setForm] = useState({
-    type: "", date: new Date().toISOString().split("T")[0],
-    nextDue: "", cost: "", tech: "", notes: "", status: "In Progress",
-  });
-  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
-
-  const valid = form.type && form.date && form.nextDue && form.tech;
-
-  return (
-    <Modal title={`New Service Record — ${plate}`} onClose={onClose} width={560}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <div style={{ gridColumn: "1/-1" }}>
-          <Select label="Service Type" required value={form.type} onChange={v => set("type", v)} options={SERVICE_TYPES} />
-        </div>
-        <Input label="Service Date" required type="date" value={form.date} onChange={v => set("date", v)} />
-        <Input label="Next Due Date" required type="date" value={form.nextDue} onChange={v => set("nextDue", v)} />
-        <Select label="Technician" required value={form.tech} onChange={v => set("tech", v)} options={techs} />
-        <Input label="Cost (PKR)" type="number" value={form.cost} onChange={v => set("cost", v)} placeholder="0" />
-        <Select label="Status" value={form.status} onChange={v => set("status", v)} options={["Received","In Progress","Waiting for Parts","Completed"]} />
-        <div style={{ gridColumn: "1/-1", display: "flex", flexDirection: "column", gap: 6 }}>
-          <label style={{ fontSize: 11, fontWeight: 700, color: T.muted, letterSpacing: 0.8, textTransform: "uppercase" }}>Notes</label>
-          <textarea
-            value={form.notes} onChange={e => set("notes", e.target.value)}
-            placeholder="Describe the work done, parts used…"
-            style={{
-              background: T.card, border: `1px solid ${T.border}`, borderRadius: 6,
-              padding: "9px 12px", color: T.textBright, fontSize: 13,
-              resize: "vertical", minHeight: 70, fontFamily: "'Barlow', sans-serif",
-            }}
-          />
-        </div>
-      </div>
-      <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
-        <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
-        <Btn disabled={!valid} onClick={() => valid && onSave({ ...form, id: "s" + uid(), plate, cost: Number(form.cost) || 0 })}>
-          Save Record
-        </Btn>
-      </div>
-    </Modal>
   );
 }
 
@@ -832,7 +726,6 @@ function LookupView({ data, navigate, onAddCar }) {
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
                     <Plate plate={car.plate} size="md" />
                     {latest && <Badge level={lvl} />}
-                    <SyncIcon status={car._sync_status} />
                   </div>
                   <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, fontWeight: 700, color: T.textBright }}>
                     {car.year} {car.make} {car.model}
@@ -941,17 +834,6 @@ function CarDetailView({ data, plate, onBack, onAddService, onSchedule, navigate
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
               <Plate plate={car.plate} size="lg" />
               <Badge level={lvl} />
-              <SyncIcon status={car._sync_status} size={18} />
-              {car._sync_status === SYNC_STATUS.CONFLICT && (
-                <div style={{ 
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                  background: T.dangerDim, color: T.danger, border: `1px solid ${T.danger}44`,
-                  padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700,
-                  fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: 0.5
-                }}>
-                  <AlertTriangle size={12} /> SYNC CONFLICT
-                </div>
-              )}
             </div>
             <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, color: T.textBright, marginBottom: 4 }}>
               {car.year} {car.make} {car.model}
@@ -1066,8 +948,7 @@ function CarDetailView({ data, plate, onBack, onAddService, onSchedule, navigate
                           <div>
                             <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 17, fontWeight: 700, color: T.textBright }}>{s.type}</span>
                             {i === 0 && <span style={{ marginLeft: 8, fontSize: 10, color: T.accent, fontWeight: 700 }}>LATEST</span>}
-                            <span style={{ marginLeft: 8 }}><SyncIcon status={s._sync_status} size={12} /></span>
-                          </div>
+                                                      </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 15, fontWeight: 700, color: T.accent }}>
                               ₨{s.cost?.toLocaleString()}
@@ -1185,7 +1066,6 @@ function AlertsView({ data, navigate }) {
                     <Plate plate={s.plate} size="sm" />
                     <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 16, fontWeight: 700, color: T.textBright }}>{s.type}</span>
                     <Badge level={lvl} />
-                    <SyncIcon status={s._sync_status} />
                   </div>
                   <div style={{ fontSize: 12, color: T.muted }}>
                     {car?.year} {car?.make} {car?.model} · {client?.name || "No client"} · Due: {fmt(s.nextDue)}
@@ -1354,31 +1234,22 @@ function ClientsView({ data, navigate }) {
 }
 
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
-function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, lastSync }) {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [pendingCount, setPendingCount] = useState(0);
+function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast }) {
+  const [backup, setBackup] = useState({ dir: "", lastBackupAt: null });
+  const [backingUp, setBackingUp] = useState(false);
+
+  const loadBackupInfo = async () => {
+    try { setBackup(await databaseManager.backupInfo()); } catch (e) { /* non-fatal */ }
+  };
 
   useEffect(() => {
-    const handleStatus = () => setIsOnline(navigator.onLine);
-    window.addEventListener('online', handleStatus);
-    window.addEventListener('offline', handleStatus);
-
-    const checkPending = async () => {
-      try {
-        const ops = await localDatabase.getQueuedOperations();
-        setPendingCount(ops.length);
-      } catch (e) {}
-    };
-
-    const interval = setInterval(checkPending, 5000);
-    checkPending();
-
-    return () => {
-      window.removeEventListener('online', handleStatus);
-      window.removeEventListener('offline', handleStatus);
-      clearInterval(interval);
-    };
+    loadBackupInfo();
+    const t = setInterval(loadBackupInfo, 60000);
+    return () => clearInterval(t);
   }, []);
+
+  const backupStale = !backup.lastBackupAt ||
+    Date.now() - new Date(backup.lastBackupAt).getTime() > 3 * 86400000;
 
   const nav = [
     { key: "dashboard", icon: <LayoutDashboard size={18} />, label: "Dashboard" },
@@ -1405,28 +1276,22 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, lastSync }
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: "14px 10px" }}>
-        {/* Status Indicator */}
+        {/* Data / backup status */}
         <div style={{
           padding: "10px 12px", marginBottom: "16px", borderRadius: "8px",
-          background: isOnline ? T.successDim : T.dangerDim,
-          border: `1px solid ${isOnline ? T.success : T.danger}33`,
+          background: backupStale ? T.warningDim : T.successDim,
+          border: `1px solid ${backupStale ? T.warning : T.success}33`,
           display: "flex", flexDirection: "column", gap: "4px"
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: isOnline ? T.success : T.danger }} />
-            <span style={{ fontSize: "12px", fontWeight: "bold", color: isOnline ? T.success : T.danger, fontFamily: "'Barlow Condensed'" }}>
-              {isOnline ? "SYSTEM ONLINE" : "SYSTEM OFFLINE"}
+            <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: backupStale ? T.warning : T.success }} />
+            <span style={{ fontSize: "12px", fontWeight: "bold", color: backupStale ? T.warning : T.success, fontFamily: "'Barlow Condensed'" }}>
+              {backupStale ? "BACKUP OVERDUE" : "DATA BACKED UP"}
             </span>
           </div>
-          <div style={{ fontSize: "10px", color: T.muted, display: "flex", alignItems: "center", gap: "5px", marginTop: 2 }}>
-            <Cloud size={10} /> Last synced: {formatLastSynced(lastSync)}
+          <div style={{ fontSize: "10px", color: T.muted, marginTop: 2 }}>
+            Last backup: {formatLastSynced(backup.lastBackupAt)}
           </div>
-          {pendingCount > 0 && (
-            <div style={{ fontSize: "11px", color: T.textBright, display: "flex", alignItems: "center", gap: "6px", marginTop: 4 }}>
-              <RefreshCw size={10} style={{ animation: "spin 2s linear infinite" }} />
-              {pendingCount} item{pendingCount !== 1 ? 's' : ''} syncing...
-            </div>
-          )}
         </div>
 
         {nav.map(item => {
@@ -1505,7 +1370,7 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, lastSync }
           <button 
             onClick={async () => {
               try {
-                const blob = await localDatabase.backup();
+                const blob = new Blob([JSON.stringify(await databaseManager.exportJson(), null, 2)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -1538,8 +1403,8 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, lastSync }
                   try {
                     const data = JSON.parse(event.target.result);
                     if (window.confirm("Restore from backup? This will merge with existing local data.")) {
-                      await databaseManager.importData(data);
-                      alert("Data imported successfully!");
+                      const counts = await databaseManager.importJson(data);
+                      alert(`Imported ${counts.clients} clients, ${counts.cars} vehicles, ${counts.services} services, ${counts.appointments} appointments.`);
                       window.location.reload();
                     }
                   } catch (err) {
@@ -1561,26 +1426,47 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, lastSync }
           </button>
         </div>
 
-        <button 
-          disabled={!isOnline}
+        <button
+          disabled={backingUp}
           onClick={async () => {
-            if (window.confirm("Clear local cache and re-sync from remote?")) {
-              await databaseManager.clearAll();
-              showToast("Local data cleared. Re-syncing...");
-              triggerSyncAndRefresh(true);
+            setBackingUp(true);
+            try {
+              const res = await databaseManager.backupNow();
+              showToast("Backup saved: " + res.path);
+              loadBackupInfo();
+            } catch (e) {
+              alert("Backup failed: " + e.message);
+            } finally {
+              setBackingUp(false);
             }
           }}
           style={{
-            width: "100%", padding: "6px", marginBottom: "10px",
-            background: isOnline ? T.dangerDim : T.muted + "22", 
-            color: isOnline ? "#FFFFFF" : T.muted, 
-            border: `1px solid ${T.danger}33`,
-            borderRadius: "6px", cursor: isOnline ? "pointer" : "not-allowed", 
-            fontSize: "11px", fontWeight: "bold",
-            opacity: isOnline ? 1 : 0.5
+            width: "100%", padding: "6px", marginBottom: "6px",
+            background: T.successDim, color: T.success,
+            border: `1px solid ${T.success}33`, borderRadius: "6px",
+            cursor: backingUp ? "wait" : "pointer", fontSize: "11px", fontWeight: "bold"
           }}
         >
-          {isOnline ? "CLEAR LOCAL CACHE" : "CANNOT CLEAR CACHE OFFLINE"}
+          {backingUp ? "BACKING UP…" : "BACKUP NOW"}
+        </button>
+        <button
+          onClick={async () => {
+            try {
+              const dir = await databaseManager.chooseBackupDir();
+              if (dir) { showToast("Backup folder set: " + dir); loadBackupInfo(); }
+            } catch (e) {
+              alert("Could not set backup folder: " + e.message);
+            }
+          }}
+          title={backup.dir}
+          style={{
+            width: "100%", padding: "6px", marginBottom: "10px",
+            background: "transparent", color: "#FFFFFF", opacity: 0.8,
+            border: `1px solid ${T.border}33`, borderRadius: "6px",
+            cursor: "pointer", fontSize: "10px", fontWeight: "bold"
+          }}
+        >
+          CHANGE BACKUP FOLDER
         </button>
         <button 
           onClick={() => {
@@ -1618,100 +1504,26 @@ export default function App() {
   const [pendingPlate, setPendingPlate] = useState("");
   const [toast, setToast] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [lastSync, setLastSync] = useState(null);
-  const [validation, setValidation] = useState({ status: VALIDATION_STATUS.PENDING, error: null });
+  const [initError, setInitError] = useState(null);
   const [isUnlocked, setIsUnlocked] = useState(sessionStorage.getItem('autoshift_unlocked') === 'true');
 
-  // Initialize and load data
+  const refreshData = async () => {
+    setData(await databaseManager.loadAll());
+  };
+
+  // Load everything from the local database on startup
   useEffect(() => {
-    let syncInterval;
-
-    async function initAndLoad() {
+    (async () => {
       try {
-        // 1. Validate Environment/Supabase first
-        const valResult = await validateEnvironment();
-        setValidation(valResult);
-
-        if (valResult.status === VALIDATION_STATUS.FAILED) {
-          console.warn("Environmental validation failed, but proceeding with local data.");
-        }
-
-        await databaseManager.initialize();
-
-        // Load last sync metadata
-        const metadata = await localDatabase.read('sync_metadata', { table_name: 'global_last_sync' });
-        if (metadata.length > 0) {
-          setLastSync(metadata[0].last_sync);
-        }
-
-        // Load initial state from local database immediately (Offline-First)
-        const [clients, cars, services, appointments] = await Promise.all([
-          databaseManager.getClients(),
-          databaseManager.getCars(),
-          databaseManager.getServices(),
-          databaseManager.getAppointments()
-        ]);
-
-        if (clients.length > 0 || cars.length > 0) {
-          setData({ clients, cars, services, appointments });
-        } else {
-          setData(SEED); // Fallback if local is empty
-        }
-
-        // Background sync to fetch remote changes if validation succeeded
-        if (valResult.status === VALIDATION_STATUS.SUCCESS) {
-          triggerSyncAndRefresh();
-
-          // Setup periodic sync
-          syncInterval = setInterval(() => {
-            triggerSyncAndRefresh();
-          }, 30000); // More frequent sync (30s)
-        }
-
+        await refreshData();
+        const saved = await databaseManager.getSetting("technicians", null);
+        if (Array.isArray(saved) && saved.length) setTechs(saved);
       } catch (error) {
         console.error("Initialization failed:", error);
-        setData(SEED);
+        setInitError(error.message || String(error));
       }
-    }
-
-    initAndLoad();
-
-    const handleOnline = () => {
-      showToast("System Online. Syncing...");
-      triggerSyncAndRefresh();
-    };
-    
-    window.addEventListener('online', handleOnline);
-    return () => {
-      if (syncInterval) clearInterval(syncInterval);
-      window.removeEventListener('online', handleOnline);
-    };
+    })();
   }, []);
-
-  const triggerSyncAndRefresh = async (forceRefresh = false) => {
-    const hasNewRemoteData = await databaseManager.syncWithSupabase();
-    
-    // Always refresh lastSync from metadata after a sync attempt
-    const metadata = await localDatabase.read('sync_metadata', { table_name: 'global_last_sync' });
-    if (metadata.length > 0) {
-      setLastSync(metadata[0].last_sync);
-    }
-
-    if (hasNewRemoteData || forceRefresh) {
-      const [uClients, uCars, uServices, uAppointments] = await Promise.all([
-        databaseManager.getClients(),
-        databaseManager.getCars(),
-        databaseManager.getServices(),
-        databaseManager.getAppointments()
-      ]);
-      setData({ 
-        clients: uClients, 
-        cars: uCars, 
-        services: uServices, 
-        appointments: uAppointments 
-      });
-    }
-  };
 
   const navigate = (v, id) => {
     if (v === "editService") {
@@ -1734,7 +1546,7 @@ export default function App() {
       await databaseManager.update('cars', updatedCar.id, updatedCar);
       setModal(null);
       showToast("Vehicle updated successfully");
-      triggerSyncAndRefresh(true);
+      refreshData();
     } catch (error) {
       console.error("Error updating car:", error);
       showToast("Error updating vehicle");
@@ -1747,7 +1559,7 @@ export default function App() {
       await databaseManager.delete('cars', carId);
       setView("lookup");
       showToast("Vehicle removed successfully");
-      triggerSyncAndRefresh(true);
+      refreshData();
     } catch (error) {
       console.error("Error deleting car:", error);
       showToast("Error removing vehicle");
@@ -1759,7 +1571,7 @@ export default function App() {
       await databaseManager.update('services', updated.id, updated);
       setModal(null);
       showToast("Service record updated");
-      triggerSyncAndRefresh(true);
+      refreshData();
     } catch (error) {
       console.error("Error updating service:", error);
       showToast("Error updating record");
@@ -1771,7 +1583,7 @@ export default function App() {
       await databaseManager.create('services', record);
       setModal(null);
       showToast("Service record saved");
-      triggerSyncAndRefresh(true);
+      refreshData();
     } catch (error) {
       console.error("Error saving service:", error);
       showToast("Error saving service record");
@@ -1806,7 +1618,7 @@ export default function App() {
       setSelectedPlate(insertedCar.plate);
       setView("car");
       showToast(`${insertedCar.plate} registered successfully`);
-      triggerSyncAndRefresh(true);
+      refreshData();
 
     } catch (error) {
       console.error("Error saving car:", error);
@@ -1819,7 +1631,7 @@ export default function App() {
       await databaseManager.create('appointments', appt);
       setModal(null);
       showToast("Appointment booked successfully");
-      triggerSyncAndRefresh(true);
+      refreshData();
     } catch (error) {
       console.error("Error saving appointment:", error);
       showToast("Error booking appointment");
@@ -1836,29 +1648,18 @@ export default function App() {
   if (!data) {
     return (
       <div style={{ background: T.bg, height: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center", maxWidth: 400, padding: 20 }}>
-          {validation.status === VALIDATION_STATUS.FAILED && !navigator.onLine ? (
-            <>
-              <CloudOff size={48} style={{ color: T.warning, display: "block", margin: "0 auto 16px" }} />
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", color: T.textBright, fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Working Offline</div>
-              <div style={{ color: T.muted, fontSize: 14, lineHeight: 1.5 }}>We couldn't reach the cloud, but don't worry. You can continue managing your showroom locally. We'll sync everything once you're back online.</div>
-              <Btn onClick={() => setData(SEED)} style={{ marginTop: 24 }}>Continue to Dashboard</Btn>
-            </>
-          ) : validation.status === VALIDATION_STATUS.FAILED ? (
+        <div style={{ textAlign: "center", maxWidth: 440, padding: 20 }}>
+          {initError ? (
             <>
               <AlertTriangle size={48} style={{ color: T.danger, display: "block", margin: "0 auto 16px" }} />
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", color: T.textBright, fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Connection Failed</div>
-              <div style={{ color: T.muted, fontSize: 14, lineHeight: 1.5, marginBottom: 20 }}>{validation.error}</div>
-              <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-                <Btn variant="ghost" onClick={() => window.location.reload()}>Retry Connection</Btn>
-                <Btn onClick={() => setData(SEED)}>Work Offline</Btn>
-              </div>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", color: T.textBright, fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Could not open the database</div>
+              <div style={{ color: T.muted, fontSize: 14, lineHeight: 1.5, marginBottom: 20 }}>{initError}</div>
+              <Btn variant="ghost" onClick={() => window.location.reload()}>Retry</Btn>
             </>
           ) : (
             <>
               <Wrench size={36} style={{ color: T.accent, display: "block", margin: "0 auto 14px", animation: "spin 1s linear infinite" }} />
               <div style={{ fontFamily: "'Barlow Condensed', sans-serif", color: T.muted, fontSize: 16, fontWeight: 600 }}>Loading AutoShift…</div>
-              <div style={{ fontSize: 11, color: T.muted, marginTop: 8 }}>{validation.status === VALIDATION_STATUS.PENDING ? "Verifying cloud connection..." : "Initializing local database..."}</div>
             </>
           )}
         </div>
@@ -1870,7 +1671,6 @@ export default function App() {
 
   return (
     <div style={{ background: T.bg, minHeight: "100vh", fontFamily: "'Barlow', sans-serif" }}>
-      <OfflineBanner />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Barlow:wght@300;400;500;600&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1884,7 +1684,7 @@ export default function App() {
         @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
 
-      <Sidebar active={view} navigate={navigate} alertCount={alertCount} isAdmin={isAdmin} setIsAdmin={setIsAdmin} lastSync={lastSync} />
+      <Sidebar active={view} navigate={navigate} alertCount={alertCount} isAdmin={isAdmin} setIsAdmin={setIsAdmin} showToast={showToast} />
 
       {/* Main */}
       <div style={{ marginLeft: 220, padding: "32px 36px", minHeight: "100vh", maxWidth: 1200 }}>
@@ -1932,7 +1732,12 @@ export default function App() {
         />
       )}
       {modal === "manageTechs" && (
-        <ManageTechsModal techs={techs} onSave={(newList) => { setTechs(newList); setModal(null); showToast("Staff list updated"); }} onClose={() => setModal(null)} />
+        <ManageTechsModal techs={techs} onSave={async (newList) => {
+          setTechs(newList);
+          setModal(null);
+          try { await databaseManager.setSetting("technicians", newList); showToast("Staff list updated"); }
+          catch (e) { showToast("Staff list updated but could not be saved"); }
+        }} onClose={() => setModal(null)} />
       )}
       {modal === "editService" && selectedServiceId && (
         <EditServiceModal 
