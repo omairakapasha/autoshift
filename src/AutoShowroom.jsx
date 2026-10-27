@@ -1864,7 +1864,6 @@ export default function App() {
   return (
     <div style={{ background: T.bg, minHeight: "100vh", fontFamily: "'Roboto', sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,400&family=Roboto+Condensed:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: ${T.bg}; font-family: 'Roboto', sans-serif; }
         input, select, textarea, button { font-family: inherit; outline: none; }
