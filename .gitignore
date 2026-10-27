@@ -2,6 +2,7 @@
 .env.local
 .env.production
 Secrets
+ADMIN_INTERNAL_MANUAL.md
 # Build outputs
 dist/
 build/
