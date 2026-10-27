@@ -1,6 +1,7 @@
 .env
 .env.local
 .env.production
+Secrets
 # Build outputs
 dist/
 build/
