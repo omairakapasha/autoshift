@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Delete, ArrowRight, ShieldCheck, Wrench } from 'lucide-react';
 import { databaseManager } from '../database/index.js';
+import autoShiftLogo from '../logo.png';
 
 const T = {
   bg: "#FDFDFB", accent: "#9B3131", text: "#2D2D2D", textBright: "#1A1A1A",
@@ -116,17 +117,17 @@ export default function PinGate({ onUnlock }) {
   const sub = mode === 'setup' ? SETUP_STEPS[step].hint : 'Enter your PIN';
 
   return (
-    <div style={{ height: '100vh', width: '100vw', background: T.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: "'Barlow', sans-serif" }}>
+    <div style={{ height: '100vh', width: '100vw', background: T.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: "'Roboto', sans-serif" }}>
       <style>{`
+        * { box-sizing: border-box; }
+        button, input { font-family: inherit; }
         @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-10px)} 75%{transform:translateX(10px)} }
         .shake { animation: shake 0.2s ease-in-out 0s 2; }
       `}</style>
 
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
-        <div style={{ width: 60, height: 60, background: T.accent, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', boxShadow: '0 10px 25px rgba(155,49,49,0.3)' }}>
-          <Wrench size={32} color="#0A0C10" />
-        </div>
-        <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, color: T.textBright, marginBottom: 8, letterSpacing: 1 }}>
+        <img src={autoShiftLogo} alt="AutoShift" style={{ width: 60, height: 60, borderRadius: 12, objectFit: 'contain', margin: '0 auto 20px', display: 'block', background: '#FFFFFF', padding: 6, boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} />
+        <h1 style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 32, fontWeight: 800, color: T.textBright, marginBottom: 8, letterSpacing: 1 }}>
           {showroomName.toUpperCase()}
         </h1>
         {mode === 'loading' && <p style={{ color: T.muted, fontSize: 14 }}>Starting…</p>}
@@ -185,7 +186,7 @@ function PadButton({ children, onClick, variant = 'default', label, disabled }) 
       onClick={onClick}
       style={{
         height: 70, borderRadius: 12, cursor: disabled ? 'not-allowed' : 'pointer',
-        fontSize: 24, fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif",
+        fontSize: 24, fontWeight: 700, fontFamily: "'Roboto Condensed', sans-serif",
         display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.1s',
         transform: isPressed ? 'scale(0.95)' : 'scale(1)',
         boxShadow: isPressed ? 'none' : '0 4px 10px rgba(0,0,0,0.05)',

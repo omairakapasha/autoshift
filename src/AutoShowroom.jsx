@@ -9,6 +9,7 @@ import {
 import { databaseManager } from "./database/index.js";
 import PinGate from "./components/PinGate";
 import { AdminPinDialog, ChangePinDialog } from "./components/PinDialogs";
+import autoShiftLogo from "./logo.png";
 
 // ─── UTILITIES ───────────────────────────────────────────────────────────────
 
@@ -58,7 +59,7 @@ const T = {
   accentDim: "rgba(155, 49, 49, 0.1)",
   accentGlow: "rgba(155, 49, 49, 0.2)",
   text: "#2D2D2D", // Dark Grey
-  textBright: "#1A1A1A", 
+  textBright: "#1A1A1A",
   muted: "#6D6D6D", // Medium Grey
   success: "#4A7C59", // Muted Green
   successDim: "rgba(74, 124, 89, 0.12)",
@@ -103,8 +104,8 @@ function ManageTechsModal({ techs, onSave, onClose }) {
   return (
     <Modal title="Manage Maintenance Staff" onClose={onClose} width={400}>
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        <input 
-          value={newTech} onChange={e => setNewTech(e.target.value)} 
+        <input
+          value={newTech} onChange={e => setNewTech(e.target.value)}
           placeholder="New technician name..."
           style={{
             flex: 1, background: T.card, border: `1px solid ${T.border}`, borderRadius: 6,
@@ -157,7 +158,7 @@ function AddServiceModal({ plate, techs, onSave, onClose }) {
         <Input label="Next Due Date" required type="date" value={form.nextDue} onChange={v => set("nextDue", v)} />
         <Select label="Technician" required value={form.tech} onChange={v => set("tech", v)} options={techs} />
         <Input label="Cost (PKR)" type="number" value={form.cost} onChange={v => set("cost", v)} placeholder="e.g. 5000" />
-        <Select label="Status" value={form.status} onChange={v => set("status", v)} options={["Received","In Progress","Waiting for Parts","Completed"]} />
+        <Select label="Status" value={form.status} onChange={v => set("status", v)} options={["Received", "In Progress", "Waiting for Parts", "Completed"]} />
         <div style={{ gridColumn: "1/-1", display: "flex", flexDirection: "column", gap: 6 }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: T.muted, letterSpacing: 0.8, textTransform: "uppercase" }}>Notes</label>
           <textarea
@@ -166,7 +167,7 @@ function AddServiceModal({ plate, techs, onSave, onClose }) {
             style={{
               background: T.card, border: `1px solid ${T.border}`, borderRadius: 6,
               padding: "9px 12px", color: T.textBright, fontSize: 13,
-              resize: "vertical", minHeight: 70, fontFamily: "'Barlow', sans-serif",
+              resize: "vertical", minHeight: 70, fontFamily: "'Roboto', sans-serif",
             }}
           />
         </div>
@@ -194,7 +195,7 @@ function EditServiceModal({ service, techs, onSave, onClose }) {
         <Input label="Next Due Date" required type="date" value={form.nextDue} onChange={v => set("nextDue", v)} />
         <Select label="Technician" required value={form.tech} onChange={v => set("tech", v)} options={techs} />
         <Input label="Cost (PKR)" type="number" value={form.cost} onChange={v => set("cost", v)} />
-        <Select label="Status" value={form.status} onChange={v => set("status", v)} options={["Received","In Progress","Waiting for Parts","Completed"]} />
+        <Select label="Status" value={form.status} onChange={v => set("status", v)} options={["Received", "In Progress", "Waiting for Parts", "Completed"]} />
         <div style={{ gridColumn: "1/-1", display: "flex", flexDirection: "column", gap: 6 }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: T.muted, letterSpacing: 0.8, textTransform: "uppercase" }}>Notes</label>
           <textarea
@@ -202,7 +203,7 @@ function EditServiceModal({ service, techs, onSave, onClose }) {
             style={{
               background: T.card, border: `1px solid ${T.border}`, borderRadius: 6,
               padding: "9px 12px", color: T.textBright, fontSize: 13,
-              resize: "vertical", minHeight: 70, fontFamily: "'Barlow', sans-serif",
+              resize: "vertical", minHeight: 70, fontFamily: "'Roboto', sans-serif",
             }}
           />
         </div>
@@ -253,7 +254,7 @@ function Btn({ children, onClick, variant = "primary", size = "md", icon, disabl
   const base = {
     display: "inline-flex", alignItems: "center", gap: 6,
     border: "none", cursor: disabled ? "not-allowed" : "pointer",
-    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700,
+    fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 700,
     letterSpacing: 0.5, transition: "all 0.15s", borderRadius: 6,
     opacity: disabled ? 0.5 : 1, fontSize: size === "sm" ? 13 : size === "lg" ? 16 : 14,
     padding: size === "sm" ? "6px 12px" : size === "lg" ? "12px 22px" : "8px 16px",
@@ -355,7 +356,7 @@ function Modal({ title, onClose, children, width = 540 }) {
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "18px 22px", borderBottom: `1px solid ${T.border}`,
         }}>
-          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 18, color: T.textBright }}>
+          <span style={{ fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 700, fontSize: 18, color: T.textBright }}>
             {title}
           </span>
           <button onClick={onClose} style={{
@@ -378,7 +379,7 @@ function Toast({ msg, onDone }) {
       position: "fixed", bottom: 28, right: 28,
       background: T.success, color: "#FFFFFF",
       padding: "12px 20px", borderRadius: 8,
-      fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 15,
+      fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 700, fontSize: 15,
       boxShadow: `0 8px 32px ${T.success}33`, zIndex: 2000,
       animation: "slideUp 0.2s ease",
     }}>
@@ -428,7 +429,7 @@ function AddCarModal({ prefillPlate = "", prefillClientId = "", clients, onSave,
             borderColor: tab === t ? T.accent : T.border,
             background: tab === t ? T.accentDim : "transparent",
             color: tab === t ? T.accent : T.muted,
-            fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700,
+            fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 700,
             fontSize: 13, cursor: "pointer", textTransform: "capitalize",
           }}>
             {t === "existing" ? "Existing Client" : "New Client"}
@@ -443,9 +444,9 @@ function AddCarModal({ prefillPlate = "", prefillClientId = "", clients, onSave,
             <button
               onClick={() => setTab("new")}
               style={{
-                background: T.accent, color: "#0A0C10", border: "none",
+                background: T.accent, color: "#FFFFFF", border: "none",
                 borderRadius: 4, padding: "4px 8px", fontSize: 12, fontWeight: 700,
-                cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif"
+                cursor: "pointer", fontFamily: "'Roboto Condensed', sans-serif"
               }}
             >
               + Create Client
@@ -490,7 +491,7 @@ function AddApptModal({ data, prefillPlate = "", onSave, onClose }) {
   }, [form.plate]);
 
   const valid = form.plate && form.date && form.type;
-  const times = ["08:00 AM","09:00 AM","10:00 AM","11:00 AM","12:00 PM","01:00 PM","02:00 PM","03:00 PM","04:00 PM","05:00 PM"];
+  const times = ["08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM"];
 
   return (
     <Modal title="Book Appointment" onClose={onClose} width={520}>
@@ -530,16 +531,16 @@ function DashboardView({ data, navigate, onAddCar }) {
   const alerts = data.services.filter(s => alertLevel(s.nextDue) !== "ok");
   const today = new Date().toISOString().split("T")[0];
   const todayAppts = data.appointments.filter(a => a.date === today);
-  
+
   const currMonth = new Date().toISOString().slice(0, 7);
   const prevDate = new Date();
   prevDate.setMonth(prevDate.getMonth() - 1);
   const prevMonth = prevDate.toISOString().slice(0, 7);
-  
+
   const monthRevenue = data.services.reduce((sum, s) => {
     return s.date?.slice(0, 7) === currMonth ? sum + (s.cost || 0) : sum;
   }, 0);
-  
+
   const prevMonthRevenue = data.services.reduce((sum, s) => {
     return s.date?.slice(0, 7) === prevMonth ? sum + (s.cost || 0) : sum;
   }, 0);
@@ -567,12 +568,12 @@ function DashboardView({ data, navigate, onAddCar }) {
     { icon: <Car size={20} />, label: "Registered Vehicles", value: data.cars.length, sub: `${data.clients.length} clients`, color: T.info },
     { icon: <AlertTriangle size={20} />, label: "Active Alerts", value: alerts.length, sub: `${alerts.filter(a => alertLevel(a.nextDue) === "overdue").length} overdue`, color: T.danger },
     { icon: <CalendarDays size={20} />, label: "Today's Appointments", value: todayAppts.length, sub: "scheduled", color: T.accent },
-    { 
-      icon: <TrendingUp size={20} />, 
-      label: "Revenue This Month", 
-      value: `₨${(monthRevenue / 1000).toFixed(0)}k`, 
-      sub: `${revenueGrowth >= 0 ? '+' : ''}${revenueGrowth.toFixed(0)}% from last month`, 
-      color: T.success 
+    {
+      icon: <TrendingUp size={20} />,
+      label: "Revenue This Month",
+      value: `₨${(monthRevenue / 1000).toFixed(0)}k`,
+      sub: `${revenueGrowth >= 0 ? '+' : ''}${revenueGrowth.toFixed(0)}% from last month`,
+      color: T.success
     },
   ];
 
@@ -580,7 +581,7 @@ function DashboardView({ data, navigate, onAddCar }) {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
         <div>
-          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, color: T.textBright, marginBottom: 4 }}>
+          <h1 style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 28, fontWeight: 800, color: T.textBright, marginBottom: 4 }}>
             Good morning 👋
           </h1>
           <p style={{ color: T.muted, fontSize: 14 }}>
@@ -599,7 +600,7 @@ function DashboardView({ data, navigate, onAddCar }) {
               <Car size={24} color="#0A0C10" />
             </div>
             <div>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, fontWeight: 700, color: T.textBright, marginBottom: 2 }}>
+              <div style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 18, fontWeight: 700, color: T.textBright, marginBottom: 2 }}>
                 No vehicles registered yet
               </div>
               <div style={{ color: T.muted, fontSize: 13 }}>
@@ -622,7 +623,7 @@ function DashboardView({ data, navigate, onAddCar }) {
               <span style={{ fontSize: 11, color: T.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>{s.sub}</span>
             </div>
             <div>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, color: T.textBright, lineHeight: 1 }}>{s.value}</div>
+              <div style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 32, fontWeight: 800, color: T.textBright, lineHeight: 1 }}>{s.value}</div>
               <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>{s.label}</div>
             </div>
           </Card>
@@ -635,7 +636,7 @@ function DashboardView({ data, navigate, onAddCar }) {
           {/* Alerts */}
           <Card style={{ padding: 0 }}>
             <div style={{ padding: "16px 20px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, color: T.textBright, display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 700, fontSize: 16, color: T.textBright, display: "flex", alignItems: "center", gap: 8 }}>
                 <Bell size={16} color={T.accent} /> Maintenance Alerts
               </span>
               <Btn size="sm" variant="ghost" onClick={() => navigate("alerts")}>View All <ChevronRight size={12} /></Btn>
@@ -678,7 +679,7 @@ function DashboardView({ data, navigate, onAddCar }) {
           {/* Today's Schedule */}
           <Card style={{ padding: 0 }}>
             <div style={{ padding: "16px 20px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, color: T.textBright, display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 700, fontSize: 16, color: T.textBright, display: "flex", alignItems: "center", gap: 8 }}>
                 <CalendarDays size={16} color={T.accent} /> Today's Schedule
               </span>
               <Btn size="sm" variant="ghost" onClick={() => navigate("schedule")}>View All <ChevronRight size={12} /></Btn>
@@ -698,7 +699,7 @@ function DashboardView({ data, navigate, onAddCar }) {
                     borderBottom: `1px solid ${T.border}`,
                   }}>
                     <div style={{ textAlign: "center", minWidth: 50 }}>
-                      <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 16, color: T.accent }}>{a.time}</div>
+                      <div style={{ fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 800, fontSize: 16, color: T.accent }}>{a.time}</div>
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
@@ -720,7 +721,7 @@ function DashboardView({ data, navigate, onAddCar }) {
           <Card>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <Zap size={16} color={T.warning} />
-              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, color: T.textBright }}>Popular Services</span>
+              <span style={{ fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 700, fontSize: 16, color: T.textBright }}>Popular Services</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {topServices.map(([type, count]) => (
@@ -740,18 +741,18 @@ function DashboardView({ data, navigate, onAddCar }) {
           <Card>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <Car size={16} color={T.info} />
-              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, color: T.textBright }}>Top Car Brands</span>
+              <span style={{ fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 700, fontSize: 16, color: T.textBright }}>Top Car Brands</span>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
               {topBrands.map(([brand, count], i) => (
-                <div key={brand} style={{ 
-                  flex: 1, minWidth: 80, padding: "12px 10px", borderRadius: 8, 
-                  background: i === 0 ? T.infoDim : T.cardHover, 
+                <div key={brand} style={{
+                  flex: 1, minWidth: 80, padding: "12px 10px", borderRadius: 8,
+                  background: i === 0 ? T.infoDim : T.cardHover,
                   border: `1px solid ${i === 0 ? T.info + '33' : T.border}`,
                   textAlign: "center"
                 }}>
                   <div style={{ fontSize: 11, color: T.muted, fontWeight: 700, textTransform: "uppercase" }}>{brand}</div>
-                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 24, fontWeight: 800, color: i === 0 ? T.info : T.textBright }}>{count}</div>
+                  <div style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 24, fontWeight: 800, color: i === 0 ? T.info : T.textBright }}>{count}</div>
                   <div style={{ fontSize: 10, color: T.muted }}>Services</div>
                 </div>
               ))}
@@ -775,7 +776,7 @@ function LookupView({ data, navigate, onAddCar }) {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, color: T.textBright, marginBottom: 6 }}>
+          <h1 style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 28, fontWeight: 800, color: T.textBright, marginBottom: 6 }}>
             Vehicle Lookup
           </h1>
           <p style={{ color: T.muted, fontSize: 14 }}>Search by plate number or vehicle name</p>
@@ -803,7 +804,7 @@ function LookupView({ data, navigate, onAddCar }) {
       {searched && q.length > 0 && found.length === 0 && (
         <Card style={{ maxWidth: 560, textAlign: "center", padding: 36 }}>
           <Car size={40} style={{ display: "block", margin: "0 auto 12px", color: T.muted }} />
-          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, fontWeight: 700, color: T.textBright, marginBottom: 6 }}>
+          <p style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 20, fontWeight: 700, color: T.textBright, marginBottom: 6 }}>
             No vehicle found for "{q}"
           </p>
           <p style={{ color: T.muted, fontSize: 13, marginBottom: 20 }}>
@@ -832,7 +833,7 @@ function LookupView({ data, navigate, onAddCar }) {
                     <Plate plate={car.plate} size="md" />
                     {latest && <Badge level={lvl} />}
                   </div>
-                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, fontWeight: 700, color: T.textBright }}>
+                  <div style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 18, fontWeight: 700, color: T.textBright }}>
                     {car.year} {car.make} {car.model}
                     <span style={{ fontSize: 13, fontWeight: 400, color: T.muted, marginLeft: 8 }}>{car.color}</span>
                   </div>
@@ -857,7 +858,7 @@ function LookupView({ data, navigate, onAddCar }) {
       {!searched && data.cars.length === 0 && (
         <Card style={{ maxWidth: 560, textAlign: "center", padding: 36 }}>
           <Car size={40} style={{ display: "block", margin: "0 auto 12px", color: T.muted }} />
-          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, fontWeight: 700, color: T.textBright, marginBottom: 6 }}>
+          <p style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 20, fontWeight: 700, color: T.textBright, marginBottom: 6 }}>
             No vehicles registered yet
           </p>
           <p style={{ color: T.muted, fontSize: 13, marginBottom: 20 }}>
@@ -929,7 +930,7 @@ function CarDetailView({ data, plate, onBack, onAddService, onSchedule, navigate
   if (!car) return (
     <div style={{ textAlign: "center", paddingTop: 80 }}>
       <Car size={48} style={{ color: T.muted, display: "block", margin: "0 auto 16px" }} />
-      <p style={{ color: T.muted, fontSize: 18, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700 }}>Vehicle not found</p>
+      <p style={{ color: T.muted, fontSize: 18, fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 700 }}>Vehicle not found</p>
       <Btn variant="ghost" onClick={onBack} style={{ marginTop: 16 }} icon={<ArrowLeft size={14} />}>Go Back</Btn>
     </div>
   );
@@ -955,7 +956,7 @@ function CarDetailView({ data, plate, onBack, onAddService, onSchedule, navigate
               <Plate plate={car.plate} size="lg" />
               <Badge level={lvl} />
             </div>
-            <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, color: T.textBright, marginBottom: 4 }}>
+            <h1 style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 32, fontWeight: 800, color: T.textBright, marginBottom: 4 }}>
               {car.year} {car.make} {car.model}
             </h1>
             <p style={{ color: T.muted, fontSize: 14 }}>{car.color}</p>
@@ -981,7 +982,7 @@ function CarDetailView({ data, plate, onBack, onAddService, onSchedule, navigate
             <Card>
               <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 12 }}>Registered Owner</div>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                <div style={{ width: 40, height: 40, borderRadius: "50%", background: T.accentDim, display: "flex", alignItems: "center", justifyContent: "center", color: T.accent, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 18 }}>
+                <div style={{ width: 40, height: 40, borderRadius: "50%", background: T.accentDim, display: "flex", alignItems: "center", justifyContent: "center", color: T.accent, fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 800, fontSize: 18 }}>
                   {client.name.charAt(0)}
                 </div>
                 <div>
@@ -1006,7 +1007,7 @@ function CarDetailView({ data, plate, onBack, onAddService, onSchedule, navigate
           {latestService && (
             <Card style={{ background: ALERT_CONFIG[lvl].dim, borderColor: ALERT_CONFIG[lvl].color + "44" }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10 }}>Next Service Due</div>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 22, fontWeight: 800, color: ALERT_CONFIG[lvl].color, marginBottom: 2 }}>
+              <div style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 22, fontWeight: 800, color: ALERT_CONFIG[lvl].color, marginBottom: 2 }}>
                 {fmt(latestService.nextDue)}
               </div>
               <div style={{ fontSize: 13, color: T.text }}>{latestService.type}</div>
@@ -1037,13 +1038,13 @@ function CarDetailView({ data, plate, onBack, onAddService, onSchedule, navigate
 
         {/* Service History */}
         <div>
-          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, fontWeight: 700, color: T.textBright, marginBottom: 16 }}>
+          <div style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 18, fontWeight: 700, color: T.textBright, marginBottom: 16 }}>
             Service History ({services.length})
           </div>
           {services.length === 0 ? (
             <Card style={{ textAlign: "center", padding: 40 }}>
               <Wrench size={36} style={{ display: "block", margin: "0 auto 12px", color: T.muted }} />
-              <p style={{ color: T.muted, fontSize: 15, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600 }}>No service records yet</p>
+              <p style={{ color: T.muted, fontSize: 15, fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 600 }}>No service records yet</p>
               <p style={{ color: T.muted, fontSize: 12, marginTop: 4 }}>Click "Add Service" to log the first maintenance record</p>
             </Card>
           ) : (
@@ -1066,15 +1067,15 @@ function CarDetailView({ data, plate, onBack, onAddService, onSchedule, navigate
                       <Card style={{ flex: 1, padding: "14px 16px" }}>
                         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 8 }}>
                           <div>
-                            <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 17, fontWeight: 700, color: T.textBright }}>{s.type}</span>
+                            <span style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 17, fontWeight: 700, color: T.textBright }}>{s.type}</span>
                             {i === 0 && <span style={{ marginLeft: 8, fontSize: 10, color: T.accent, fontWeight: 700 }}>LATEST</span>}
-                                                      </div>
+                          </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 15, fontWeight: 700, color: T.accent }}>
+                            <span style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 15, fontWeight: 700, color: T.accent }}>
                               ₨{s.cost?.toLocaleString()}
                             </span>
                             {isAdmin && (
-                              <button 
+                              <button
                                 onClick={() => navigate("editService", s.id)}
                                 style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 4 }}
                                 title="Edit Record"
@@ -1129,7 +1130,7 @@ function AlertsView({ data, navigate }) {
 
   return (
     <div>
-      <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, color: T.textBright, marginBottom: 6 }}>
+      <h1 style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 28, fontWeight: 800, color: T.textBright, marginBottom: 6 }}>
         Maintenance Alerts
       </h1>
       <p style={{ color: T.muted, fontSize: 14, marginBottom: 24 }}>Vehicles requiring attention based on service schedules</p>
@@ -1147,7 +1148,7 @@ function AlertsView({ data, navigate }) {
             borderColor: filter === tab.key ? tab.color : T.border,
             background: filter === tab.key ? tab.color + "18" : "transparent",
             color: filter === tab.key ? tab.color : T.muted,
-            fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700,
+            fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 700,
             fontSize: 13, cursor: "pointer",
           }}>
             {tab.label}
@@ -1158,7 +1159,7 @@ function AlertsView({ data, navigate }) {
       {filtered.length === 0 ? (
         <Card style={{ textAlign: "center", padding: 48 }}>
           <CheckCircle2 size={48} style={{ display: "block", margin: "0 auto 12px", color: T.success }} />
-          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, fontWeight: 700, color: T.textBright }}>
+          <p style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 20, fontWeight: 700, color: T.textBright }}>
             All clear in this category
           </p>
         </Card>
@@ -1174,7 +1175,7 @@ function AlertsView({ data, navigate }) {
               <Card key={s.id} onClick={() => navigate("car", s.plate)} style={{ display: "flex", alignItems: "center", gap: 14 }}>
                 <div style={{ width: 4, height: 50, borderRadius: 2, background: cfg.color, flexShrink: 0 }} />
                 <div style={{ background: cfg.dim, border: `1px solid ${cfg.color}33`, borderRadius: 8, padding: "10px 14px", textAlign: "center", minWidth: 80 }}>
-                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 26, fontWeight: 800, color: cfg.color, lineHeight: 1 }}>
+                  <div style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 26, fontWeight: 800, color: cfg.color, lineHeight: 1 }}>
                     {Math.abs(d)}
                   </div>
                   <div style={{ fontSize: 10, color: cfg.color, fontWeight: 700 }}>
@@ -1184,7 +1185,7 @@ function AlertsView({ data, navigate }) {
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
                     <Plate plate={s.plate} size="sm" />
-                    <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 16, fontWeight: 700, color: T.textBright }}>{s.type}</span>
+                    <span style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 16, fontWeight: 700, color: T.textBright }}>{s.type}</span>
                     <Badge level={lvl} />
                   </div>
                   <div style={{ fontSize: 12, color: T.muted }}>
@@ -1223,7 +1224,7 @@ function ScheduleView({ data, onAddAppt }) {
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, color: T.textBright, marginBottom: 4 }}>Appointments</h1>
+          <h1 style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 28, fontWeight: 800, color: T.textBright, marginBottom: 4 }}>Appointments</h1>
           <p style={{ color: T.muted, fontSize: 14 }}>Manage service bookings for registered clients</p>
         </div>
         <Btn icon={<Plus size={16} />} size="lg" onClick={onAddAppt}>Book Appointment</Btn>
@@ -1236,7 +1237,7 @@ function ScheduleView({ data, onAddAppt }) {
             borderColor: filter === f ? T.accent : T.border,
             background: filter === f ? T.accentDim : "transparent",
             color: filter === f ? T.accent : T.muted,
-            fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer",
+            fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer",
             textTransform: "capitalize",
           }}>
             {f === "upcoming" ? `Upcoming (${sorted.filter(a => a.date >= today).length})` : `Past (${sorted.filter(a => a.date < today).length})`}
@@ -1247,7 +1248,7 @@ function ScheduleView({ data, onAddAppt }) {
       {shown.length === 0 ? (
         <Card style={{ textAlign: "center", padding: 48 }}>
           <CalendarDays size={40} style={{ display: "block", margin: "0 auto 12px", color: T.muted }} />
-          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, color: T.muted, fontWeight: 700 }}>No {filter} appointments</p>
+          <p style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 18, color: T.muted, fontWeight: 700 }}>No {filter} appointments</p>
         </Card>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -1258,14 +1259,14 @@ function ScheduleView({ data, onAddAppt }) {
             return (
               <Card key={a.id} style={{ display: "flex", alignItems: "center", gap: 16 }}>
                 <div style={{ minWidth: 90, textAlign: "center" }}>
-                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, color: T.accent }}>{fmt(a.date)}</div>
+                  <div style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 14, fontWeight: 700, color: T.accent }}>{fmt(a.date)}</div>
                   <div style={{ fontSize: 13, color: T.muted, marginTop: 2 }}>{a.time}</div>
                 </div>
                 <div style={{ width: 1, height: 44, background: T.border, flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
                     <Plate plate={a.plate} size="sm" />
-                    <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 16, fontWeight: 700, color: T.textBright }}>{a.type}</span>
+                    <span style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 16, fontWeight: 700, color: T.textBright }}>{a.type}</span>
                   </div>
                   <div style={{ fontSize: 12, color: T.muted }}>
                     {car?.make} {car?.model} · {client?.name || "Walk-in"}
@@ -1296,7 +1297,7 @@ function ClientsView({ data, navigate, onAddCar }) {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 800, color: T.textBright, marginBottom: 6 }}>Clients</h1>
+          <h1 style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 28, fontWeight: 800, color: T.textBright, marginBottom: 6 }}>Clients</h1>
           <p style={{ color: T.muted, fontSize: 14 }}>All registered customers and their vehicles</p>
         </div>
         <Btn icon={<Plus size={16} />} onClick={() => onAddCar("")}>
@@ -1324,11 +1325,11 @@ function ClientsView({ data, navigate, onAddCar }) {
           return (
             <Card key={client.id} style={{ padding: 18 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-                <div style={{ width: 46, height: 46, borderRadius: "50%", background: T.accentDim, border: `2px solid ${T.accent}44`, display: "flex", alignItems: "center", justifyContent: "center", color: T.accent, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 20 }}>
+                <div style={{ width: 46, height: 46, borderRadius: "50%", background: T.accentDim, border: `2px solid ${T.accent}44`, display: "flex", alignItems: "center", justifyContent: "center", color: T.accent, fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 800, fontSize: 20 }}>
                   {client.name.charAt(0)}
                 </div>
                 <div>
-                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, fontWeight: 700, color: T.textBright }}>{client.name}</div>
+                  <div style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 18, fontWeight: 700, color: T.textBright }}>{client.name}</div>
                   <div style={{ fontSize: 11, color: T.muted }}>Client since {fmt(client.since)}</div>
                 </div>
                 {alerts.length > 0 && <Badge level="warning" custom={`${alerts.length} alert${alerts.length > 1 ? "s" : ""}`} />}
@@ -1353,7 +1354,7 @@ function ClientsView({ data, navigate, onAddCar }) {
                     padding: "3px 8px", borderRadius: 4, background: "transparent",
                     border: `1px dashed ${T.border}`, color: T.muted, fontSize: 11,
                     cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
-                    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 600
+                    fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 600
                   }}
                   title={`Register new vehicle for ${client.name}`}
                 >
@@ -1400,16 +1401,14 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
   ];
 
   return (
-    <div style={{ width: 220, background: T.sidebar, borderRight: `1px solid ${T.border}`, display: "flex", flexDirection: "column", height: "100vh", position: "fixed", left: 0, top: 0 }}>
+    <div style={{ width: 220, background: T.sidebar, borderRight: `1px solid ${T.border}`, display: "flex", flexDirection: "column", height: "100vh", position: "fixed", left: 0, top: 0, fontFamily: "'Roboto', sans-serif" }}>
       {/* Logo */}
       <div style={{ padding: "22px 20px 18px", borderBottom: `1px solid ${T.border}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 8, background: T.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Wrench size={18} color="#0A0C10" />
-          </div>
+          <img src={autoShiftLogo} alt="AutoShift" style={{ width: 34, height: 34, borderRadius: 8, objectFit: "contain", background: "#FFFFFF", padding: 2 }} />
           <div>
-            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 16, color: "#FFFFFF", letterSpacing: 0.5 }}>AutoShift</div>
-            <div style={{ fontSize: 10, color: "#FFFFFF", opacity: 0.7, fontWeight: 600, letterSpacing: 0.5 }}>SHOWROOM MANAGER</div>
+            <div style={{ fontFamily: "'Roboto', sans-serif", fontWeight: 700, fontSize: 17, color: "#FFFFFF", letterSpacing: 0.5 }}>AutoShift</div>
+            <div style={{ fontSize: 10, color: "#94A3B8", fontWeight: 600, letterSpacing: 0.8, fontFamily: "'Roboto', sans-serif" }}>SHOWROOM MANAGER</div>
           </div>
         </div>
       </div>
@@ -1421,30 +1420,30 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
           onClick={() => onAddCar("")}
           style={{
             width: "100%", padding: "10px 12px", marginBottom: "14px",
-            background: T.accent, color: "#0A0C10",
+            background: T.accent, color: "#FFFFFF",
             border: "none", borderRadius: "8px", cursor: "pointer",
-            fontSize: "13px", fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif",
+            fontSize: "13px", fontWeight: 700, fontFamily: "'Roboto Condensed', sans-serif", letterSpacing: 0.5,
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             boxShadow: `0 2px 8px rgba(0,0,0,0.2)`, transition: "all 0.15s"
           }}
         >
-          <Plus size={16} strokeWidth={2.5} /> REGISTER VEHICLE
+          <Plus size={16} strokeWidth={2.5} color="#FFFFFF" /> REGISTER VEHICLE
         </button>
 
         {/* Data / backup status */}
         <div style={{
           padding: "10px 12px", marginBottom: "16px", borderRadius: "8px",
-          background: backupStale ? T.warningDim : T.successDim,
-          border: `1px solid ${backupStale ? T.warning : T.success}33`,
+          background: backupStale ? "rgba(234, 179, 8, 0.15)" : "rgba(34, 197, 94, 0.15)",
+          border: `1px solid ${backupStale ? "rgba(250, 204, 21, 0.35)" : "rgba(74, 222, 128, 0.35)"}`,
           display: "flex", flexDirection: "column", gap: "4px"
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: backupStale ? T.warning : T.success }} />
-            <span style={{ fontSize: "12px", fontWeight: "bold", color: backupStale ? T.warning : T.success, fontFamily: "'Barlow Condensed'" }}>
+            <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: backupStale ? "#FACC15" : "#4ADE80" }} />
+            <span style={{ fontSize: "12px", fontWeight: "bold", color: backupStale ? "#FACC15" : "#4ADE80", fontFamily: "'Roboto', sans-serif", letterSpacing: 0.5 }}>
               {backupStale ? "BACKUP OVERDUE" : "DATA BACKED UP"}
             </span>
           </div>
-          <div style={{ fontSize: "10px", color: T.muted, marginTop: 2 }}>
+          <div style={{ fontSize: "11px", color: "#CBD5E1", marginTop: 2, fontFamily: "'Roboto', sans-serif" }}>
             Last backup: {formatLastSynced(backup.lastBackupAt)}
           </div>
         </div>
@@ -1458,8 +1457,8 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
               background: isActive ? T.accent : "transparent",
               boxShadow: isActive ? `0 4px 12px rgba(0,0,0,0.3)` : "none",
               border: isActive ? `1px solid ${T.accent}` : "1px solid transparent",
-              color: "#FFFFFF",
-              fontFamily: "'Barlow Condensed', sans-serif", fontWeight: isActive ? 700 : 500,
+              color: isActive ? "#FFFFFF" : "#E2E8F0",
+              fontFamily: "'Roboto', sans-serif", fontWeight: isActive ? 700 : 500,
               fontSize: 14, cursor: "pointer", textAlign: "left", position: "relative",
               transition: "all 0.15s",
             }}>
@@ -1468,7 +1467,7 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
               {item.badge > 0 && (
                 <span style={{
                   marginLeft: "auto", background: T.danger, color: "#fff",
-                  fontSize: 10, fontWeight: 800, borderRadius: 10,
+                  fontSize: 11, fontWeight: 700, borderRadius: 10, fontFamily: "'Roboto', sans-serif",
                   padding: "1px 6px", minWidth: 18, textAlign: "center",
                 }}>
                   {item.badge}
@@ -1481,7 +1480,7 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
 
       {/* Footer */}
       <div style={{ padding: "14px 16px", borderTop: `1px solid ${T.border}` }}>
-        <button 
+        <button
           onClick={async () => {
             if (isAdmin) {
               try { await databaseManager.auth.drop(); } catch (e) { /* session already gone */ }
@@ -1492,10 +1491,10 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
           }}
           style={{
             width: "100%", padding: "6px", marginBottom: "10px",
-            background: isAdmin ? T.accentDim : T.card,
-            color: isAdmin ? T.accent : T.muted,
-            border: `1px solid ${isAdmin ? T.accent : T.border}33`,
-            borderRadius: "6px", cursor: "pointer", fontSize: "11px", fontWeight: "bold",
+            background: isAdmin ? "rgba(220, 38, 38, 0.25)" : "rgba(255, 255, 255, 0.08)",
+            color: isAdmin ? "#FCA5A5" : "#F1F5F9",
+            border: `1px solid ${isAdmin ? "#EF4444" : "rgba(255, 255, 255, 0.2)"}`,
+            borderRadius: "6px", cursor: "pointer", fontSize: "11px", fontWeight: "bold", fontFamily: "'Roboto Condensed', sans-serif",
             display: "flex", alignItems: "center", justifyContent: "center", gap: 6
           }}
         >
@@ -1503,13 +1502,13 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
         </button>
 
         {isAdmin && (
-          <button 
+          <button
             onClick={() => navigate("manageTechs")}
             style={{
               width: "100%", padding: "6px", marginBottom: "10px",
-              background: T.infoDim, color: T.info,
-              border: `1px solid ${T.info}33`,
-              borderRadius: "6px", cursor: "pointer", fontSize: "11px", fontWeight: "bold",
+              background: "rgba(59, 130, 246, 0.2)", color: "#93C5FD",
+              border: "1px solid rgba(59, 130, 246, 0.45)",
+              borderRadius: "6px", cursor: "pointer", fontSize: "11px", fontWeight: "bold", fontFamily: "'Roboto Condensed', sans-serif",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6
             }}
           >
@@ -1522,8 +1521,8 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
             onClick={() => setDialog("changePin")}
             style={{
               width: "100%", padding: "6px", marginBottom: "10px",
-              background: T.infoDim, color: T.info, border: `1px solid ${T.info}33`,
-              borderRadius: "6px", cursor: "pointer", fontSize: "11px", fontWeight: "bold",
+              background: "rgba(59, 130, 246, 0.2)", color: "#93C5FD", border: `1px solid ${T.info}33`,
+              borderRadius: "6px", cursor: "pointer", fontSize: "11px", fontWeight: "bold", fontFamily: "'Roboto Condensed', sans-serif",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6
             }}
           >
@@ -1532,7 +1531,7 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
         )}
 
         <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-          <button 
+          <button
             onClick={async () => {
               try {
                 const blob = new Blob([JSON.stringify(await databaseManager.exportJson(), null, 2)], { type: 'application/json' });
@@ -1547,15 +1546,15 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
               }
             }}
             style={{
-              flex: 1, padding: "8px", background: T.infoDim, color: T.info, 
-              border: `1px solid ${T.info}33`, borderRadius: "6px", cursor: "pointer", 
+              flex: 1, padding: "8px", background: "rgba(59, 130, 246, 0.2)", color: "#93C5FD", fontFamily: "'Roboto Condensed', sans-serif",
+              border: "1px solid rgba(59, 130, 246, 0.45)", borderRadius: "6px", cursor: "pointer",
               fontSize: "10px", fontWeight: "bold", display: "flex", alignItems: "center", justifyContent: "center", gap: 5
             }}
             title="Export Data"
           >
             <Download size={12} /> EXPORT
           </button>
-          <button 
+          <button
             onClick={() => {
               const input = document.createElement('input');
               input.type = 'file';
@@ -1581,8 +1580,8 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
               input.click();
             }}
             style={{
-              flex: 1, padding: "8px", background: T.successDim, color: T.success, 
-              border: `1px solid ${T.success}33`, borderRadius: "6px", cursor: "pointer", 
+              flex: 1, padding: "8px", background: "rgba(34, 197, 94, 0.2)", color: "#86EFAC", fontFamily: "'Roboto Condensed', sans-serif",
+              border: "1px solid rgba(34, 197, 94, 0.45)", borderRadius: "6px", cursor: "pointer",
               fontSize: "10px", fontWeight: "bold", display: "flex", alignItems: "center", justifyContent: "center", gap: 5
             }}
             title="Import Data"
@@ -1607,9 +1606,9 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
           }}
           style={{
             width: "100%", padding: "6px", marginBottom: "6px",
-            background: T.successDim, color: T.success,
-            border: `1px solid ${T.success}33`, borderRadius: "6px",
-            cursor: backingUp ? "wait" : "pointer", fontSize: "11px", fontWeight: "bold"
+            background: "rgba(34, 197, 94, 0.2)", color: "#86EFAC",
+            border: "1px solid rgba(34, 197, 94, 0.45)", borderRadius: "6px",
+            cursor: backingUp ? "wait" : "pointer", fontSize: "11px", fontWeight: "bold", fontFamily: "'Roboto Condensed', sans-serif"
           }}
         >
           {backingUp ? "BACKING UP…" : "BACKUP NOW"}
@@ -1626,20 +1625,20 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
           title={backup.dir}
           style={{
             width: "100%", padding: "6px", marginBottom: "10px",
-            background: "transparent", color: "#FFFFFF", opacity: 0.8,
-            border: `1px solid ${T.border}33`, borderRadius: "6px",
-            cursor: "pointer", fontSize: "10px", fontWeight: "bold"
+            background: "rgba(255, 255, 255, 0.08)", color: "#F1F5F9",
+            border: "1px solid rgba(255, 255, 255, 0.2)", borderRadius: "6px",
+            cursor: "pointer", fontSize: "11px", fontWeight: "bold", fontFamily: "'Roboto Condensed', sans-serif"
           }}
         >
           CHANGE BACKUP FOLDER
         </button>
-        <button 
+        <button
           onClick={onLock}
           style={{
             width: "100%", padding: "6px", marginBottom: "10px",
-            background: T.sidebar, color: "#FFFFFF",
-            border: `1px solid ${T.border}33`,
-            borderRadius: "6px", cursor: "pointer", fontSize: "11px", fontWeight: "bold",
+            background: "rgba(239, 68, 68, 0.2)", color: "#FCA5A5",
+            border: "1px solid rgba(239, 68, 68, 0.4)",
+            borderRadius: "6px", cursor: "pointer", fontSize: "11px", fontWeight: "bold", fontFamily: "'Roboto Condensed', sans-serif",
             display: "flex", alignItems: "center", justifyContent: "center", gap: 6
           }}
         >
@@ -1659,8 +1658,8 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
           />
         )}
 
-        <div style={{ fontSize: 11, color: "#FFFFFF", opacity: 0.8 }}>AutoShift MVP v1.0</div>
-        <div style={{ fontSize: 10, color: "#FFFFFF", opacity: 0.6, marginTop: 2 }}>
+        <div style={{ fontSize: 11, color: "#E2E8F0", fontWeight: 600, fontFamily: "'Roboto', sans-serif" }}>AutoShift </div>
+        <div style={{ fontSize: 10, color: "#94A3B8", marginTop: 2, fontFamily: "'Roboto', sans-serif" }}>
           {new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
         </div>
       </div>
@@ -1789,9 +1788,9 @@ export default function App() {
 
     try {
       if (tab === "new") {
-        addedClient = await databaseManager.create('clients', { 
-          name: newClient.name, 
-          phone: newClient.phone, 
+        addedClient = await databaseManager.create('clients', {
+          name: newClient.name,
+          phone: newClient.phone,
           email: newClient.email,
           since: new Date().toISOString().split("T")[0]
         });
@@ -1799,11 +1798,11 @@ export default function App() {
       }
 
       const insertedCar = await databaseManager.create('cars', {
-        plate: car.plate, 
-        make: car.make, 
+        plate: car.plate,
+        make: car.make,
         model: car.model,
-        year: car.year, 
-        color: car.color, 
+        year: car.year,
+        color: car.color,
         clientId: clientId
       });
 
@@ -1845,14 +1844,14 @@ export default function App() {
           {initError ? (
             <>
               <AlertTriangle size={48} style={{ color: T.danger, display: "block", margin: "0 auto 16px" }} />
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", color: T.textBright, fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Could not open the database</div>
+              <div style={{ fontFamily: "'Roboto Condensed', sans-serif", color: T.textBright, fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Could not open the database</div>
               <div style={{ color: T.muted, fontSize: 14, lineHeight: 1.5, marginBottom: 20 }}>{initError}</div>
               <Btn variant="ghost" onClick={() => { setData(null); setInitError(null); setIsUnlocked(false); }}>Retry</Btn>
             </>
           ) : (
             <>
               <Wrench size={36} style={{ color: T.accent, display: "block", margin: "0 auto 14px", animation: "spin 1s linear infinite" }} />
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", color: T.muted, fontSize: 16, fontWeight: 600 }}>Loading AutoShift…</div>
+              <div style={{ fontFamily: "'Roboto Condensed', sans-serif", color: T.muted, fontSize: 16, fontWeight: 600 }}>Loading AutoShift…</div>
             </>
           )}
         </div>
@@ -1863,15 +1862,15 @@ export default function App() {
   const alertCount = data.services.filter(s => alertLevel(s.nextDue) !== "ok").length;
 
   return (
-    <div style={{ background: T.bg, minHeight: "100vh", fontFamily: "'Barlow', sans-serif" }}>
+    <div style={{ background: T.bg, minHeight: "100vh", fontFamily: "'Roboto', sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Barlow:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,400&family=Roboto+Condensed:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: ${T.bg}; }
+        body { background: ${T.bg}; font-family: 'Roboto', sans-serif; }
+        input, select, textarea, button { font-family: inherit; outline: none; }
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: ${T.bg}; }
         ::-webkit-scrollbar-thumb { background: ${T.border}; border-radius: 3px; }
-        input, select, textarea { outline: none; }
         input:focus, select:focus, textarea:focus { border-color: ${T.accent} !important; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
@@ -1918,10 +1917,10 @@ export default function App() {
         <AddApptModal data={data} prefillPlate={view === "car" ? selectedPlate : ""} onSave={handleAddAppt} onClose={() => setModal(null)} />
       )}
       {modal === "editCar" && selectedPlate && (
-        <EditCarModal 
-          car={data.cars.find(c => c.plate === selectedPlate)} 
-          onSave={handleUpdateCar} 
-          onClose={() => setModal(null)} 
+        <EditCarModal
+          car={data.cars.find(c => c.plate === selectedPlate)}
+          onSave={handleUpdateCar}
+          onClose={() => setModal(null)}
         />
       )}
       {modal === "manageTechs" && (
@@ -1933,11 +1932,11 @@ export default function App() {
         }} onClose={() => setModal(null)} />
       )}
       {modal === "editService" && selectedServiceId && (
-        <EditServiceModal 
-          service={data.services.find(s => s.id === selectedServiceId)} 
-          techs={techs} 
-          onSave={handleUpdateService} 
-          onClose={() => setModal(null)} 
+        <EditServiceModal
+          service={data.services.find(s => s.id === selectedServiceId)}
+          techs={techs}
+          onSave={handleUpdateService}
+          onClose={() => setModal(null)}
         />
       )}
 
