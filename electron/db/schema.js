@@ -82,6 +82,12 @@ const MIGRATIONS = [
       ALTER TABLE services ADD COLUMN mileage INTEGER;
     `);
   },
+  // v3 — add reminder tracking to prevent duplicate notifications
+  (db) => {
+    db.exec(`
+      ALTER TABLE services ADD COLUMN last_reminder_sent TEXT;
+    `);
+  },
 ];
 
 const SCHEMA_VERSION = MIGRATIONS.length;

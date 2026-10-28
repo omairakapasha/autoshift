@@ -49,7 +49,7 @@ function startReminderScheduler() {
 }
 
 /**
- * Check for due services and send reminders
+ * Check for due services and send reminders (only once per service)
  */
 async function checkAndSendReminders() {
   try {
@@ -65,6 +65,8 @@ async function checkAndSendReminders() {
       return;
     }
 
+    // Find clients with due services that haven't been reminded yet
+    // Only send reminders for services that have never been reminded OR last reminded > 30 days ago
     const dueSoon = db
       .prepare(`
         SELECT DISTINCT
@@ -73,22 +75,24 @@ async function checkAndSendReminders() {
           cl.email,
           cl.name,
           GROUP_CONCAT(c.plate || ' (' || c.make || ' ' || c.model || ')') as vehicles,
-          COUNT(*) as count
+          COUNT(*) as count,
+          MAX(s.last_reminder_sent) as last_reminder
         FROM clients cl
         JOIN cars c ON cl.id = c.client_id
         JOIN services s ON c.plate = s.plate
         WHERE s.next_due <= date('now', '+14 days')
           AND s.next_due > date('now', '-1 days')
+          AND (s.last_reminder_sent IS NULL OR s.last_reminder_sent <= date('now', '-30 days'))
         GROUP BY cl.id
       `)
       .all();
 
     if (dueSoon.length === 0) {
-      console.log('✅ No reminders needed');
+      console.log('✅ No new reminders needed');
       return;
     }
 
-    console.log(`📬 Found ${dueSoon.length} client(s) with due services`);
+    console.log(`📬 Found ${dueSoon.length} client(s) needing reminders`);
 
     // Send reminders
     for (const client of dueSoon) {
@@ -102,7 +106,18 @@ async function checkAndSendReminders() {
         );
 
         if (emailResult.success) {
-          console.log(`  ✅ Email sent to ${client.email}`);
+          // Update last_reminder_sent for all services of this client
+          db.prepare(`
+            UPDATE services 
+            SET last_reminder_sent = datetime('now')
+            WHERE plate IN (
+              SELECT plate FROM cars WHERE client_id = ?
+            )
+            AND next_due <= date('now', '+14 days')
+            AND next_due > date('now', '-1 days')
+          `).run(client.client_id);
+
+          console.log(`  ✅ Email sent to ${client.email} (reminder marked)`);
         } else {
           console.log(`  ❌ Email failed for ${client.email}: ${emailResult.error}`);
         }
