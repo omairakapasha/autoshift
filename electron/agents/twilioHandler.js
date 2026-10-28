@@ -8,8 +8,14 @@ const twilio = require('twilio');
 
 class TwilioHandler {
   constructor(config) {
+    // Check if Twilio credentials are provided
+    if (!config.twilio.accountSid || !config.twilio.authToken) {
+      throw new Error('Twilio credentials not configured. Add TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN to .env');
+    }
+    
     this.config = config;
     this.client = twilio(config.twilio.accountSid, config.twilio.authToken);
+    console.log('✅ Twilio SMS service initialized');
   }
 
   /**

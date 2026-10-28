@@ -1,193 +1,163 @@
 'use strict';
 
-const { tool } = require('@langchain/core/tool');
-const { z } = require('zod');
-
 /**
  * Tool definitions for the service reminder agent
- * These tools allow the LLM to access database and booking functions
+ * Simple tool interface: { name, description, func }
  */
 
 function createTools(db) {
   return [
-    // Tool 1: Get vehicles requiring service
-    tool(
-      async ({ clientPhone }) => {
-        const client = db
-          .prepare('SELECT id FROM clients WHERE phone = ?')
-          .get(clientPhone);
-
-        if (!client) return { error: 'Client not found' };
-
-        const dueSoon = db
-          .prepare(`
-            SELECT 
-              c.plate,
-              c.make,
-              c.model,
-              c.year,
-              s.type,
-              s.next_due,
-              CAST((julianday(s.next_due) - julianday('now')) AS INTEGER) as days_until
-            FROM cars c
-            LEFT JOIN services s ON c.plate = s.plate
-            WHERE c.client_id = ?
-              AND (s.next_due IS NULL OR s.next_due <= date('now', '+14 days'))
-            ORDER BY s.next_due ASC
-          `)
-          .all(client.id);
-
-        return { vehicles: dueSoon || [] };
+    // Tool 1: Get services due for a client
+    {
+      name: 'get_due_services',
+      description: 'Get list of services due for a vehicle or all client vehicles',
+      func: async (params) => {
+        const { plate, client_id } = params;
+        
+        let query = `
+          SELECT 
+            s.service_type,
+            s.next_due,
+            s.last_service_date,
+            c.plate,
+            c.make,
+            c.model,
+            c.mileage
+          FROM services s
+          JOIN cars c ON s.plate = c.plate
+          WHERE 1=1
+        `;
+        
+        if (plate) {
+          query += ` AND c.plate = '${plate}'`;
+        } else if (client_id) {
+          query += ` AND c.client_id = ${client_id}`;
+        }
+        
+        query += ` ORDER BY s.next_due ASC`;
+        
+        return db.prepare(query).all();
       },
-      {
-        name: 'get_due_services',
-        description: 'Get all vehicles for a client that have services due or overdue soon',
-        schema: z.object({
-          clientPhone: z.string().describe('Client phone number'),
-        }),
-      }
-    ),
+    },
 
     // Tool 2: Get available appointment slots
-    tool(
-      async ({ date }) => {
+    {
+      name: 'get_appointment_slots',
+      description: 'Get available appointment slots for booking',
+      func: async (params) => {
+        const { date } = params;
+        
+        // Return mock slots (in production, query actual availability)
         const slots = [
           { time: '09:00', available: true },
           { time: '10:00', available: true },
-          { time: '11:00', available: true },
+          { time: '11:00', available: false },
           { time: '14:00', available: true },
           { time: '15:00', available: true },
           { time: '16:00', available: true },
         ];
-
-        // Check for existing appointments on this date
-        const booked = db
-          .prepare('SELECT time FROM appointments WHERE date = ?')
-          .all(date)
-          .map(a => a.time);
-
-        return {
-          date,
-          slots: slots.map(s => ({
-            ...s,
-            available: !booked.includes(s.time),
-          })),
-        };
+        
+        return { date: date || 'Today', slots };
       },
-      {
-        name: 'get_appointment_slots',
-        description: 'Get available appointment time slots for a specific date',
-        schema: z.object({
-          date: z.string().describe('Date in YYYY-MM-DD format'),
-        }),
-      }
-    ),
+    },
 
-    // Tool 3: Book appointment
-    tool(
-      async ({ clientPhone, vehiclePlate, date, time, serviceType }) => {
-        const client = db
-          .prepare('SELECT id FROM clients WHERE phone = ?')
-          .get(clientPhone);
+    // Tool 3: Book an appointment
+    {
+      name: 'book_appointment',
+      description: 'Book a service appointment for a vehicle',
+      func: async (params) => {
+        const { client_id, plate, date, time, service_type } = params;
+        
+        if (!client_id || !plate || !date || !time || !service_type) {
+          return { 
+            success: false,
+            error: 'Missing required parameters: client_id, plate, date, time, service_type'
+          };
+        }
+        
+        try {
+          db.prepare(`
+            INSERT INTO appointments (client_id, plate, date, time, type, status, created_at)
+            VALUES (?, ?, ?, ?, ?, 'Pending', datetime('now'))
+          `).run(client_id, plate, date, time, service_type);
+          
+          return {
+            success: true,
+            message: `Appointment booked for ${plate} on ${date} at ${time} for ${service_type}`,
+            status: 'Pending approval'
+          };
+        } catch (error) {
+          return { success: false, error: error.message };
+        }
+      },
+    },
 
-        if (!client) return { error: 'Client not found' };
-
-        const vehicle = db
-          .prepare('SELECT id FROM cars WHERE plate = ? AND client_id = ?')
-          .get(vehiclePlate, client.id);
-
-        if (!vehicle) return { error: 'Vehicle not found for this client' };
-
-        // Check if slot is available
-        const existing = db
-          .prepare('SELECT id FROM appointments WHERE date = ? AND time = ?')
-          .get(date, time);
-
-        if (existing) return { error: 'This time slot is already booked' };
-
-        // Create appointment
-        const id = `apt_${Date.now()}`;
-        db.prepare(`
-          INSERT INTO appointments (id, plate, client_id, date, time, type, status)
-          VALUES (?, ?, ?, ?, ?, ?, 'Pending')
-        `).run(id, vehiclePlate, client.id, date, time, serviceType);
-
+    // Tool 4: Notify staff of new booking
+    {
+      name: 'notify_staff',
+      description: 'Send notification to staff about new appointment booking',
+      func: async (params) => {
+        const { appointment_id, staff_email } = params;
+        
+        console.log(`[STAFF_ALERT] Notification sent to ${staff_email} for appointment ${appointment_id}`);
+        
         return {
           success: true,
-          appointmentId: id,
-          message: `Appointment booked for ${date} at ${time}`,
+          message: `Staff notified about appointment`,
+          notified: staff_email
         };
       },
-      {
-        name: 'book_appointment',
-        description: 'Book a service appointment for a vehicle',
-        schema: z.object({
-          clientPhone: z.string(),
-          vehiclePlate: z.string(),
-          date: z.string().describe('YYYY-MM-DD'),
-          time: z.string().describe('HH:MM in 24-hour format'),
-          serviceType: z.string().describe('Type of service needed'),
-        }),
-      }
-    ),
-
-    // Tool 4: Send notification to staff
-    tool(
-      async ({ appointmentId, message }) => {
-        // In production, this would send email/SMS to staff
-        console.log(`[STAFF ALERT] Appointment ${appointmentId}: ${message}`);
-        return { notified: true, message };
-      },
-      {
-        name: 'notify_staff',
-        description: 'Send notification to admin/staff about a new appointment',
-        schema: z.object({
-          appointmentId: z.string(),
-          message: z.string(),
-        }),
-      }
-    ),
+    },
 
     // Tool 5: Send SMS to client
-    tool(
-      async ({ clientPhone, message }) => {
-        // In production, this would use Twilio client to send SMS
-        console.log(`[SMS] To ${clientPhone}: ${message}`);
-        return { sent: true, to: clientPhone };
+    {
+      name: 'send_sms',
+      description: 'Send SMS message to client',
+      func: async (params) => {
+        const { client_phone, message } = params;
+        
+        if (!client_phone || !message) {
+          return { 
+            success: false,
+            error: 'Missing parameters: client_phone, message'
+          };
+        }
+        
+        console.log(`[SMS] To ${client_phone}: ${message}`);
+        
+        return { 
+          success: true, 
+          to: client_phone,
+          message: message.substring(0, 160) // SMS length limit
+        };
       },
-      {
-        name: 'send_sms',
-        description: 'Send SMS message to client',
-        schema: z.object({
-          clientPhone: z.string(),
-          message: z.string().describe('SMS message content (160 chars or less)'),
-        }),
-      }
-    ),
+    },
 
     // Tool 6: Send email to client
-    tool(
-      async ({ clientEmail, subject, messageType, appointmentDetails }) => {
-        // In production, this would use EmailHandler
-        console.log(`[EMAIL] To ${clientEmail}: ${subject}`);
-        return { sent: true, to: clientEmail, type: messageType };
+    {
+      name: 'send_email',
+      description: 'Send email to client with service info or appointment details',
+      func: async (params) => {
+        const { client_email, subject, messageType, appointmentDetails } = params;
+        
+        if (!client_email || !subject) {
+          return { 
+            success: false,
+            error: 'Missing parameters: client_email, subject'
+          };
+        }
+        
+        console.log(`[EMAIL] To ${client_email}: ${subject}`);
+        console.log(`  Type: ${messageType || 'general'}`);
+        
+        return {
+          success: true,
+          to: client_email,
+          subject: subject,
+          type: messageType || 'general'
+        };
       },
-      {
-        name: 'send_email',
-        description: 'Send email to client with service info or appointment details',
-        schema: z.object({
-          clientEmail: z.string().email(),
-          subject: z.string(),
-          messageType: z.enum(['reminder', 'confirmation', 'appointment_reminder']),
-          appointmentDetails: z.object({
-            vehiclePlate: z.string().optional(),
-            date: z.string().optional(),
-            time: z.string().optional(),
-            serviceType: z.string().optional(),
-          }).optional(),
-        }),
-      }
-    ),
+    },
   ];
 }
 

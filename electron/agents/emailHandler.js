@@ -67,7 +67,7 @@ class EmailHandler {
           Book Service Now
         </a>
       </p>
-      <p>Reply to this email or text us to confirm your appointment.</p>
+      <p>Please reply to this email or text us to confirm your appointment.</p>
       <p>AutoShift Team</p>
     `;
 

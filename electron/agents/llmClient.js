@@ -1,17 +1,13 @@
 'use strict';
 
-const { BaseChatModel } = require('@langchain/core/language_models/chat_model');
-const { AIMessageChunk } = require('@langchain/core/messages');
-
 /**
  * Universal LLM Client using native API calls
  * Works with Gemini, Claude, GPT-4, Ollama, etc.
- * No external LiteLLM package needed - uses fetch API
+ * No external dependencies needed - uses native fetch API
  */
 
-class LiteLLMChatModel extends BaseChatModel {
+class LiteLLMChatModel {
   constructor(config) {
-    super(config);
     this.config = config.llm;
     this.provider = this.config.provider;
     this.model = this.config.model;
@@ -20,47 +16,36 @@ class LiteLLMChatModel extends BaseChatModel {
     this.maxTokens = this.config.maxTokens || 1024;
   }
 
-  get lc_namespace() {
-    return ['langchain', 'chat_models', 'universal'];
-  }
-
-  async _generate(messages, options, runManager) {
+  /**
+   * Call the LLM with a message
+   * @param {string} userMessage - User's message
+   * @param {Array} history - Previous messages for context
+   * @returns {Promise<string>} - LLM response
+   */
+  async chat(userMessage, history = []) {
     try {
-      const content = await this.callLLM(messages);
-      
-      return {
-        generations: [
-          {
-            message: new AIMessageChunk({ content }),
-            text: content,
-          },
-        ],
-      };
+      const messages = [
+        ...history,
+        { role: 'user', content: userMessage },
+      ];
+
+      if (this.provider === 'gemini') {
+        return await this.callGemini(messages);
+      } else if (this.provider === 'openai') {
+        return await this.callOpenAI(messages);
+      } else if (this.provider === 'anthropic') {
+        return await this.callClaude(messages);
+      } else if (this.provider === 'ollama') {
+        return await this.callOllama(messages);
+      } else {
+        throw new Error(`Unsupported provider: ${this.provider}`);
+      }
     } catch (error) {
       console.error(
         `LLM Error (${this.provider}/${this.model}):`,
         error.message
       );
-      throw new Error(`Failed to get LLM response: ${error.message}`);
-    }
-  }
-
-  async callLLM(messages) {
-    const llmMessages = messages.map((msg) => ({
-      role: msg._getType() === 'human' ? 'user' : 'assistant',
-      content: msg.content,
-    }));
-
-    if (this.provider === 'gemini') {
-      return this.callGemini(llmMessages);
-    } else if (this.provider === 'openai') {
-      return this.callOpenAI(llmMessages);
-    } else if (this.provider === 'anthropic') {
-      return this.callClaude(llmMessages);
-    } else if (this.provider === 'ollama') {
-      return this.callOllama(llmMessages);
-    } else {
-      throw new Error(`Unsupported provider: ${this.provider}`);
+      throw error;
     }
   }
 
@@ -154,8 +139,8 @@ class LiteLLMChatModel extends BaseChatModel {
     return data.message.content;
   }
 
-  _llmType() {
-    return `universal-${this.provider}-${this.model}`;
+  getType() {
+    return `universal-${this.provider}`;
   }
 }
 

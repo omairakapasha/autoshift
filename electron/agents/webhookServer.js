@@ -16,7 +16,16 @@ class WebhookServer {
     this.db = db;
     this.app = express();
     this.agent = new ServiceAgent(db, config);
-    this.twilio = new TwilioHandler(config);
+    
+    // Twilio is optional (will be added later)
+    try {
+      this.twilio = new TwilioHandler(config);
+    } catch (error) {
+      console.warn('⚠️ Twilio not configured (will be added later)');
+      this.twilio = null;
+    }
+    
+    // Email is required
     this.email = new EmailHandler(config);
     this.setupMiddleware();
     this.setupRoutes();
@@ -35,12 +44,18 @@ class WebhookServer {
 
     // Twilio SMS webhook
     this.app.post('/webhook/sms', async (req, res) => {
+      if (!this.twilio) {
+        return res.status(503).json({ error: 'SMS service not configured. Add Twilio credentials to .env' });
+      }
       const result = await this.twilio.handleIncomingSMS(req, this.agent);
       res.status(result.success ? 200 : 500).json(result);
     });
 
     // Manual reminder trigger (admin endpoint)
     this.app.post('/admin/send-reminders', async (req, res) => {
+      if (!this.twilio) {
+        return res.status(503).json({ error: 'SMS service not configured. Add Twilio credentials to .env' });
+      }
       const reminders = await this.agent.sendServiceReminders();
       const results = await this.twilio.sendBulkReminders(
         reminders.map((r) => ({
