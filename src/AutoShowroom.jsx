@@ -593,9 +593,6 @@ function DashboardView({ data, navigate, onAddCar }) {
             {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
           </p>
         </div>
-        <Btn icon={<Plus size={16} />} onClick={() => onAddCar("")}>
-          Register Vehicle
-        </Btn>
       </div>
 
       {data.cars.length === 0 && (
@@ -613,9 +610,6 @@ function DashboardView({ data, navigate, onAddCar }) {
               </div>
             </div>
           </div>
-          <Btn icon={<Plus size={15} />} onClick={() => onAddCar("")}>
-            Register First Vehicle
-          </Btn>
         </Card>
       )}
 
