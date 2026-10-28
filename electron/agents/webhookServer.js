@@ -4,6 +4,7 @@ const express = require('express');
 const { ServiceAgent } = require('./serviceAgent');
 const { TwilioHandler } = require('./twilioHandler');
 const { EmailHandler } = require('./emailHandler');
+const { setupAdminRoutes } = require('./adminRoutes');
 const config = require('./config');
 
 /**
@@ -29,6 +30,9 @@ class WebhookServer {
     this.email = new EmailHandler(config);
     this.setupMiddleware();
     this.setupRoutes();
+    
+    // Setup admin routes for CRUD operations
+    setupAdminRoutes(this.app, db);
   }
 
   setupMiddleware() {
