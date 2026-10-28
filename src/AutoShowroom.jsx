@@ -1537,7 +1537,7 @@ function AppointmentManagementView({ data, onBack, navigate, showToast }) {
       
       showToast("Appointment approved and confirmation sent");
       setSelectedApptId(null);
-      navigate(''); // Trigger refresh
+      await refreshData();
     } catch (error) {
       console.error('Error approving appointment:', error);
       showToast("Error approving appointment");
@@ -1555,7 +1555,7 @@ function AppointmentManagementView({ data, onBack, navigate, showToast }) {
       showToast("Appointment rejected");
       setSelectedApptId(null);
       setRejectReason("");
-      navigate('');
+      await refreshData();
     } catch (error) {
       showToast("Error rejecting appointment");
     }
@@ -1567,7 +1567,7 @@ function AppointmentManagementView({ data, onBack, navigate, showToast }) {
       await databaseManager.update('appointments', apptId, { ...appt, date: newDate, time: newTime, status: 'Pending' });
       showToast("Appointment rescheduled");
       setRescheduleModal(null);
-      navigate('');
+      await refreshData();
     } catch (error) {
       showToast("Error rescheduling appointment");
     }

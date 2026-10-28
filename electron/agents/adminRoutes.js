@@ -413,6 +413,14 @@ function setupAdminRoutes(app, db) {
     try {
       const { status, plate, client_id, from_date, to_date } = req.query;
 
+      const params = [];
+      let where = [];
+      if (status) { where.push('a.status = ?'); params.push(status); }
+      if (plate) { where.push('a.plate = ?'); params.push(plate); }
+      if (client_id) { where.push('a.client_id = ?'); params.push(client_id); }
+      if (from_date) { where.push('a.date >= ?'); params.push(from_date); }
+      if (to_date) { where.push('a.date <= ?'); params.push(to_date); }
+
       let query = `
         SELECT 
           a.*, 
@@ -423,16 +431,11 @@ function setupAdminRoutes(app, db) {
         JOIN cars ca ON a.plate = ca.plate
         WHERE 1=1
       `;
-
-      if (status) query += ` AND a.status = '${status}'`;
-      if (plate) query += ` AND a.plate = '${plate}'`;
-      if (client_id) query += ` AND a.client_id = '${client_id}'`;
-      if (from_date) query += ` AND a.date >= '${from_date}'`;
-      if (to_date) query += ` AND a.date <= '${to_date}'`;
-
+      
+      if (where.length) query += ' AND ' + where.join(' AND ');
       query += ` ORDER BY a.date DESC, a.time DESC`;
 
-      const appointments = db.prepare(query).all();
+      const appointments = db.prepare(query).all(...params);
       res.json({ appointments, count: appointments.length });
     } catch (error) {
       res.status(500).json({ error: error.message });

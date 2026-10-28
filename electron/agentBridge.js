@@ -167,13 +167,17 @@ class AgentBridge {
 
     ipcMain.handle('admin:get-appointments', async (event, { status, plate, client_id }) => {
       try {
+        const params = [];
+        let where = [];
+        if (status) { where.push('a.status = ?'); params.push(status); }
+        if (plate) { where.push('a.plate = ?'); params.push(plate); }
+        if (client_id) { where.push('a.client_id = ?'); params.push(client_id); }
+        
         let query = 'SELECT a.*, c.name as client_name, ca.make, ca.model FROM appointments a JOIN clients c ON a.client_id = c.id JOIN cars ca ON a.plate = ca.plate WHERE 1=1';
-        if (status) query += ` AND a.status = '${status}'`;
-        if (plate) query += ` AND a.plate = '${plate}'`;
-        if (client_id) query += ` AND a.client_id = '${client_id}'`;
+        if (where.length) query += ' AND ' + where.join(' AND ');
         query += ' ORDER BY a.date DESC';
 
-        const appointments = this.db.prepare(query).all();
+        const appointments = this.db.prepare(query).all(...params);
         return { success: true, appointments };
       } catch (error) {
         return { success: false, error: error.message };
