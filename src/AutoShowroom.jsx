@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Search, Car, Bell, CalendarDays, Users,
   Plus, AlertTriangle, CheckCircle2, Clock, Wrench, ChevronRight,
   ArrowLeft, X, Phone, Mail, User, Zap, TrendingUp, FileText,
-  MoreVertical, RefreshCw, Shield, Gauge,
+  MoreVertical, RefreshCw, Shield, Gauge, Edit,
   Download, Upload
 } from "lucide-react";
 import { databaseManager } from "./database/index.js";
@@ -1289,10 +1289,30 @@ function ScheduleView({ data, onAddAppt }) {
 // ─── CLIENTS VIEW ─────────────────────────────────────────────────────────────
 function ClientsView({ data, navigate, onAddCar }) {
   const [search, setSearch] = useState("");
+  const [editingClient, setEditingClient] = useState(null);
+  const [editForm, setEditForm] = useState({ name: "", phone: "", email: "" });
+
   const q = search.toLowerCase();
   const filtered = data.clients.filter(c =>
     c.name.toLowerCase().includes(q) || c.phone.includes(q) || c.email.toLowerCase().includes(q)
   );
+
+  const handleEditClient = (client) => {
+    setEditingClient(client.id);
+    setEditForm({ name: client.name, phone: client.phone, email: client.email });
+  };
+
+  const handleSaveClient = async () => {
+    if (!editForm.name.trim()) { alert("Name required"); return; }
+    try {
+      await databaseManager.update("clients", editingClient, editForm);
+      alert("Client updated");
+      setEditingClient(null);
+      window.location.reload(); // Refresh data
+    } catch (e) {
+      alert("Failed to update: " + e.message);
+    }
+  };
 
   return (
     <div>
@@ -1325,14 +1345,28 @@ function ClientsView({ data, navigate, onAddCar }) {
           const totalSpend = allServices.reduce((sum, s) => sum + (s.cost || 0), 0);
           return (
             <Card key={client.id} style={{ padding: 18 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-                <div style={{ width: 46, height: 46, borderRadius: "50%", background: T.accentDim, border: `2px solid ${T.accent}44`, display: "flex", alignItems: "center", justifyContent: "center", color: T.accent, fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 800, fontSize: 20 }}>
-                  {client.name.charAt(0)}
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
+                  <div style={{ width: 46, height: 46, borderRadius: "50%", background: T.accentDim, border: `2px solid ${T.accent}44`, display: "flex", alignItems: "center", justifyContent: "center", color: T.accent, fontFamily: "'Roboto Condensed', sans-serif", fontWeight: 800, fontSize: 20 }}>
+                    {client.name.charAt(0)}
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 18, fontWeight: 700, color: T.textBright }}>{client.name}</div>
+                    <div style={{ fontSize: 11, color: T.muted }}>Client since {fmt(client.since)}</div>
+                  </div>
                 </div>
-                <div>
-                  <div style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 18, fontWeight: 700, color: T.textBright }}>{client.name}</div>
-                  <div style={{ fontSize: 11, color: T.muted }}>Client since {fmt(client.since)}</div>
-                </div>
+                <button
+                  onClick={() => handleEditClient(client)}
+                  title="Edit client"
+                  style={{
+                    padding: "4px 8px", background: "transparent", border: `1px solid ${T.border}`,
+                    borderRadius: 4, color: T.muted, cursor: "pointer", fontSize: 11,
+                    fontWeight: 600, display: "flex", alignItems: "center", gap: 4,
+                    transition: "all 0.2s", hover: { background: T.cardHover }
+                  }}
+                >
+                  <Edit size={12} /> Edit
+                </button>
                 {alerts.length > 0 && <Badge level="warning" custom={`${alerts.length} alert${alerts.length > 1 ? "s" : ""}`} />}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 14 }}>
@@ -1370,6 +1404,85 @@ function ClientsView({ data, navigate, onAddCar }) {
           );
         })}
       </div>
+
+      {/* Edit Client Modal */}
+      {editingClient && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center",
+          zIndex: 1000
+        }}>
+          <Card style={{ padding: 24, maxWidth: 400, width: "90%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: T.textBright }}>Edit Client</h2>
+              <button
+                onClick={() => setEditingClient(null)}
+                style={{ background: "none", border: "none", color: T.muted, cursor: "pointer" }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: T.muted, display: "block", marginBottom: 6 }}>Name *</label>
+                <input
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  placeholder="Client name"
+                  style={{
+                    width: "100%", padding: "8px 12px", background: T.card, border: `1px solid ${T.border}`,
+                    borderRadius: 6, color: T.textBright, fontSize: 14, boxSizing: "border-box"
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: T.muted, display: "block", marginBottom: 6 }}>Phone</label>
+                <input
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  placeholder="Phone number"
+                  style={{
+                    width: "100%", padding: "8px 12px", background: T.card, border: `1px solid ${T.border}`,
+                    borderRadius: 6, color: T.textBright, fontSize: 14, boxSizing: "border-box"
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: T.muted, display: "block", marginBottom: 6 }}>Email</label>
+                <input
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  placeholder="Email address"
+                  style={{
+                    width: "100%", padding: "8px 12px", background: T.card, border: `1px solid ${T.border}`,
+                    borderRadius: 6, color: T.textBright, fontSize: 14, boxSizing: "border-box"
+                  }}
+                />
+              </div>
+              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                <button
+                  onClick={handleSaveClient}
+                  style={{
+                    flex: 1, padding: "8px 12px", background: T.accent, color: "#FFF",
+                    border: "none", borderRadius: 6, fontWeight: 600, cursor: "pointer"
+                  }}
+                >
+                  Save Changes
+                </button>
+                <button
+                  onClick={() => setEditingClient(null)}
+                  style={{
+                    flex: 1, padding: "8px 12px", background: T.cardHover, color: T.textBright,
+                    border: `1px solid ${T.border}`, borderRadius: 6, fontWeight: 600, cursor: "pointer"
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
