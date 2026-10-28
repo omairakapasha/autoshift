@@ -6,6 +6,7 @@ const Database = require('better-sqlite3');
 const { WebhookServer } = require('./webhookServer');
 const { ServiceAgent } = require('./serviceAgent');
 const { EmailHandler } = require('./emailHandler');
+const { EmailListener } = require('./emailListener');
 const config = require('./config');
 const path = require('path');
 
@@ -25,6 +26,8 @@ console.log('✅ Database connected');
 // Initialize services
 const agent = new ServiceAgent(db, config);
 const email = new EmailHandler(config);
+const emailListener = new EmailListener(config);
+emailListener.setAgent(agent); // Connect agent to listener
 
 // Initialize and start webhook server
 const server = new WebhookServer(db);
@@ -136,9 +139,26 @@ async function checkAndSendReminders() {
 // Start the scheduler
 startReminderScheduler();
 
+/**
+ * Email Listener: Connect to Gmail IMAP and listen for incoming emails
+ */
+async function startEmailListener() {
+  try {
+    await emailListener.connect();
+    console.log('📧 Email listener started - monitoring incoming emails');
+  } catch (error) {
+    console.warn(`⚠️  Email listener not available: ${error.message}`);
+    console.warn('   (Make sure Gmail IMAP is enabled and credentials are correct)');
+  }
+}
+
+// Start email listener (non-blocking)
+startEmailListener().catch(err => console.error('Email listener error:', err.message));
+
 // Graceful shutdown
 process.on('SIGINT', () => {
   console.log('\n🛑 Shutting down gracefully...');
+  emailListener.disconnect();
   db.close();
   process.exit(0);
 });
