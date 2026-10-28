@@ -3,6 +3,7 @@
 const express = require('express');
 const { ServiceAgent } = require('./serviceAgent');
 const { TwilioHandler } = require('./twilioHandler');
+const { EmailHandler } = require('./emailHandler');
 const config = require('./config');
 
 /**
@@ -16,6 +17,7 @@ class WebhookServer {
     this.app = express();
     this.agent = new ServiceAgent(db, config);
     this.twilio = new TwilioHandler(config);
+    this.email = new EmailHandler(config);
     this.setupMiddleware();
     this.setupRoutes();
   }
@@ -92,7 +94,7 @@ class WebhookServer {
     });
 
     // Approve/reject appointment
-    this.app.post('/admin/appointments/:id/:action', (req, res) => {
+    this.app.post('/admin/appointments/:id/:action', async (req, res) => {
       const { id, action } = req.params;
       if (!['approve', 'reject'].includes(action)) {
         return res.status(400).json({ error: 'Invalid action' });
@@ -103,7 +105,72 @@ class WebhookServer {
         .prepare('UPDATE appointments SET status = ? WHERE id = ?')
         .run(status, id);
 
+      // Get appointment details and send email confirmation
+      const apt = this.db
+        .prepare(`
+          SELECT a.*, c.email, c.name, ca.plate, ca.make, ca.model
+          FROM appointments a
+          JOIN clients c ON a.client_id = c.id
+          JOIN cars ca ON a.plate = ca.plate
+          WHERE a.id = ?
+        `)
+        .get(id);
+
+      if (apt && apt.email && action === 'approve') {
+        await this.email.sendAppointmentConfirmation(
+          apt.email,
+          apt.name,
+          apt.plate,
+          apt.date,
+          apt.time,
+          apt.type
+        );
+      }
+
       res.json({ status, appointmentId: id });
+    });
+
+    // Email endpoints
+    this.app.post('/admin/send-email', async (req, res) => {
+      const { to, clientName, messageType, appointmentDetails } = req.body;
+      if (!to || !messageType) {
+        return res.status(400).json({ error: 'Missing to or messageType' });
+      }
+
+      let result;
+      if (messageType === 'reminder') {
+        result = await this.email.sendServiceReminder(
+          to,
+          clientName,
+          appointmentDetails?.vehicles || [],
+          appointmentDetails?.daysUntilDue || 7
+        );
+      } else if (messageType === 'confirmation') {
+        result = await this.email.sendAppointmentConfirmation(
+          to,
+          clientName,
+          appointmentDetails?.vehiclePlate,
+          appointmentDetails?.date,
+          appointmentDetails?.time,
+          appointmentDetails?.serviceType
+        );
+      } else if (messageType === 'appointment_reminder') {
+        result = await this.email.sendAppointmentReminder(
+          to,
+          clientName,
+          appointmentDetails?.vehiclePlate,
+          appointmentDetails?.date,
+          appointmentDetails?.time
+        );
+      }
+
+      res.json(result);
+    });
+
+    // Test email connection
+    this.app.get('/admin/email-test', async (req, res) => {
+      const result = await this.email.testConnection();
+      res.json(result);
     });
   }
 

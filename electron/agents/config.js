@@ -13,11 +13,37 @@ const config = {
     phoneNumber: process.env.TWILIO_PHONE_NUMBER, // e.g., "+1234567890"
   },
 
+  // Email notifications (SMTP / SendGrid / Gmail)
+  email: {
+    provider: process.env.EMAIL_PROVIDER || 'gmail', // 'gmail', 'sendgrid', 'smtp'
+    from: process.env.EMAIL_FROM, // e.g., "noreply@autoshift.com"
+    
+    // Gmail with App Password (easiest)
+    gmail: {
+      user: process.env.GMAIL_USER, // your-email@gmail.com
+      password: process.env.GMAIL_APP_PASSWORD, // Gmail App Password (not your main password)
+    },
+
+    // SendGrid (best for production)
+    sendgrid: {
+      apiKey: process.env.SENDGRID_API_KEY,
+    },
+
+    // Custom SMTP server
+    smtp: {
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT || 587,
+      secure: process.env.SMTP_SECURE === 'true',
+      user: process.env.SMTP_USER,
+      password: process.env.SMTP_PASSWORD,
+    },
+  },
+
   // LLM via LiteLLM (model-agnostic)
   llm: {
     // Current: Google Gemini
     provider: 'gemini', // Options: 'gemini', 'claude', 'gpt-4', 'ollama', 'mistral', etc.
-    model: 'gemini-1.5-flash', // Google Gemini Pro - fast & free tier available
+    model: 'gemini-3.6-flash', // Google Gemini Pro - fast & free tier available
     apiKey: process.env.GOOGLE_API_KEY, // Get from https://makersuite.google.com/app/apikeys
     temperature: 0.7,
     maxTokens: 1024,

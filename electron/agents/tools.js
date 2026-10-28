@@ -164,6 +164,30 @@ function createTools(db) {
         }),
       }
     ),
+
+    // Tool 6: Send email to client
+    tool(
+      async ({ clientEmail, subject, messageType, appointmentDetails }) => {
+        // In production, this would use EmailHandler
+        console.log(`[EMAIL] To ${clientEmail}: ${subject}`);
+        return { sent: true, to: clientEmail, type: messageType };
+      },
+      {
+        name: 'send_email',
+        description: 'Send email to client with service info or appointment details',
+        schema: z.object({
+          clientEmail: z.string().email(),
+          subject: z.string(),
+          messageType: z.enum(['reminder', 'confirmation', 'appointment_reminder']),
+          appointmentDetails: z.object({
+            vehiclePlate: z.string().optional(),
+            date: z.string().optional(),
+            time: z.string().optional(),
+            serviceType: z.string().optional(),
+          }).optional(),
+        }),
+      }
+    ),
   ];
 }
 
