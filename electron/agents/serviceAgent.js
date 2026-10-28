@@ -1,28 +1,24 @@
 'use strict';
 
 const { createTools } = require('./tools');
-const { ChatAnthropic } = require('@langchain/anthropic');
+const { LiteLLMChatModel } = require('./llmClient');
 const { StateGraph } = require('@langchain/langgraph');
 const { HumanMessage } = require('@langchain/core/messages');
-const { tool } = require('@langchain/core/tool');
-const { z } = require('zod');
 
 /**
  * Service Reminder & Booking Agent
- * Uses LangGraph to handle multi-turn conversations about service bookings
+ * Uses LangGraph with LiteLLM for model-agnostic LLM support
+ * Works with Gemini, Claude, GPT-4, Ollama, etc.
  */
 
 class ServiceAgent {
   constructor(db, config) {
     this.db = db;
     this.config = config;
-    this.llm = new ChatAnthropic({
-      apiKey: config.llm.apiKey,
-      model: config.llm.model,
-      temperature: config.llm.temperature,
-    });
+    this.llm = new LiteLLMChatModel(config);
     this.tools = createTools(db);
     this.initializeGraph();
+    console.log(`✅ Agent initialized with ${config.llm.provider}/${config.llm.model}`);
   }
 
   initializeGraph() {

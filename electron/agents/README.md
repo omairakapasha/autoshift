@@ -1,16 +1,17 @@
 # AutoShift Service Reminder Agent
 
-AI-powered SMS chatbot for automated service reminders and appointment booking using Twilio, LangChain, and LangGraph.
+AI-powered SMS chatbot for automated service reminders and appointment booking using Twilio, LangChain, LangGraph, and **LiteLLM** (model-agnostic LLM support).
 
 ## Features
 
-- **Service Reminders**: Automatically notify clients when services are due
-- **Smart Booking**: Clients can reply via SMS to book appointments
-- **Multi-turn Conversation**: Natural language dialogue using Claude LLM
-- **Admin Notifications**: Staff notified of new bookings
-- **Appointment Management**: Approve/reject bookings from admin dashboard
+- ✅ **Multi-Model Support**: Works with Gemini, Claude, GPT-4, Ollama, Mistral, etc.
+- ✅ **Service Reminders**: Automatically notify clients when services are due
+- ✅ **Smart Booking**: Clients reply via SMS to book appointments
+- ✅ **Multi-turn Conversation**: Natural language dialogue using any LLM
+- ✅ **Admin Notifications**: Staff notified of new bookings
+- ✅ **Appointment Management**: Approve/reject bookings from admin dashboard
 
-## Setup
+## Quick Start (Gemini - Recommended)
 
 ### 1. Install Dependencies
 
@@ -18,30 +19,25 @@ AI-powered SMS chatbot for automated service reminders and appointment booking u
 npm install
 ```
 
-### 2. Configure Environment
+### 2. Get API Keys
 
-Create a `.env` file in the project root:
+**Google Gemini** (FREE tier available):
+- Go to https://makersuite.google.com/app/apikeys
+- Create API key (no credit card needed for free tier)
+
+**Twilio:**
+- Go to https://www.twilio.com/console
+- Get Account SID, Auth Token, and SMS phone number
+
+### 3. Configure `.env`
 
 ```env
 TWILIO_ACCOUNT_SID=AC...your_sid
 TWILIO_AUTH_TOKEN=...your_token
 TWILIO_PHONE_NUMBER=+1234567890
 
-ANTHROPIC_API_KEY=sk-ant-...your_key
+GOOGLE_API_KEY=AIzaSy...your_gemini_key
 ```
-
-### 3. Get API Keys
-
-**Twilio:**
-- Go to https://www.twilio.com/console
-- Get Account SID and Auth Token
-- Get a Twilio phone number for SMS
-- Set up webhook URL in Twilio console pointing to `/webhook/sms`
-
-**Anthropic (Claude):**
-- Go to https://console.anthropic.com
-- Create API key
-- Use model: `claude-3-5-sonnet-20241022`
 
 ### 4. Run Agent Server
 
@@ -50,6 +46,55 @@ node electron/agents/webhookServer.js
 ```
 
 Server runs on `http://localhost:3001`
+
+## Model Options
+
+Just change `config.llm.provider` and `config.llm.model` in `config.js`:
+
+### 🆓 Google Gemini (Recommended - FREE)
+```javascript
+llm: {
+  provider: 'gemini',
+  model: 'gemini-1.5-flash', // Fast & free
+  apiKey: process.env.GOOGLE_API_KEY,
+}
+```
+
+### OpenAI GPT-4
+```javascript
+llm: {
+  provider: 'openai',
+  model: 'gpt-4o',
+  apiKey: process.env.OPENAI_API_KEY,
+}
+```
+
+### Anthropic Claude
+```javascript
+llm: {
+  provider: 'anthropic',
+  model: 'claude-3-5-sonnet-20241022',
+  apiKey: process.env.ANTHROPIC_API_KEY,
+}
+```
+
+### 🏠 Open Source - Ollama (Local)
+```javascript
+llm: {
+  provider: 'ollama',
+  model: 'llama2', // or mistral, neural-chat, etc.
+  // No API key needed - runs locally
+}
+```
+
+### Mistral AI
+```javascript
+llm: {
+  provider: 'mistral',
+  model: 'mistral-large',
+  apiKey: process.env.MISTRAL_API_KEY,
+}
+```
 
 ## Architecture
 
@@ -63,9 +108,9 @@ Server runs on `http://localhost:3001`
 ┌─────────────────────────────────────────────┐
 │       ServiceAgent (LangGraph)              │
 │  ┌─────────────────────────────────────┐   │
-│  │ Claude LLM (3.5 Sonnet)             │   │
-│  │ • Understands intent                │   │
-│  │ • Calls tools for booking           │   │
+│  │ LiteLLM (Model-Agnostic)            │   │
+│  │ • Gemini, Claude, GPT-4, etc.       │   │
+│  │ • Single API → any model            │   │
 │  │ • Multi-turn conversation           │   │
 │  └─────────────────────────────────────┘   │
 └────┬────────────────────┬────────────────────┘
@@ -137,12 +182,31 @@ Agent: "Booked! Your appointment is tomorrow at 10 AM. Staff will confirm."
 Staff: Notified via notify_staff, can approve/reject in admin panel
 ```
 
+## Switching Models
+
+**To use Claude instead of Gemini:**
+
+1. Get Anthropic API key from https://console.anthropic.com
+2. Update `config.js`:
+   ```javascript
+   llm: {
+     provider: 'anthropic',
+     model: 'claude-3-5-sonnet-20241022',
+     apiKey: process.env.ANTHROPIC_API_KEY,
+   }
+   ```
+3. Update `.env`: `ANTHROPIC_API_KEY=sk-ant-...your_key`
+4. Restart server
+
+**That's it!** No other code changes needed. LiteLLM handles the API translation.
+
 ## Deployment Notes
 
 - **Webhook URL**: Configure in Twilio console (e.g., `https://yourserver.com/webhook/sms`)
 - **Environment**: Load `.env` from project root
 - **Database**: Must be same SQLite instance used by Electron app
 - **Scaling**: Each agent instance runs a separate LLM client; consider connection pooling for high volume
+- **Model Costs**: Gemini free tier / GPT-4 pay-as-you-go / Claude pricing varies
 
 ## Troubleshooting
 
@@ -157,8 +221,14 @@ Staff: Notified via notify_staff, can approve/reject in admin panel
 - Ensure appointment slot isn't already booked
 
 **LLM not responding:**
-- Check `ANTHROPIC_API_KEY` is valid
-- Monitor Anthropic quota and rate limits
+- Check API key is valid for your chosen provider
+- Monitor model rate limits and quotas
+- Check `config.llm.provider` and `config.llm.model` match your setup
+
+**Switch to different model didn't work:**
+- Clear any cached API clients
+- Restart the webhook server
+- Check `.env` has the correct API key for new provider
 
 ## Future Enhancements
 
@@ -168,3 +238,6 @@ Staff: Notified via notify_staff, can approve/reject in admin panel
 - [ ] Calendar sync
 - [ ] Multi-language support
 - [ ] Analytics dashboard
+- [ ] Streaming responses for faster replies
+- [ ] Context memory for multi-session conversations
+
