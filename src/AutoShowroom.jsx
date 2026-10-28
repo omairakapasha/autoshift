@@ -1380,6 +1380,640 @@ function ClientsView({ data, navigate, onAddCar }) {
   );
 }
 
+// ─── ADMIN DASHBOARD VIEW ─────────────────────────────────────────────────────
+
+function AdminDashboardView({ data, navigate, onSendReminder, onManageAppointments }) {
+  const pendingAppts = data.appointments.filter(a => a.status === "Pending");
+  const confirmedAppts = data.appointments.filter(a => a.status === "Confirmed");
+  const overdueServices = data.services.filter(s => {
+    const d = daysUntil(s.nextDue);
+    return d < 0;
+  });
+  const upcomingServices = data.services.filter(s => {
+    const d = daysUntil(s.nextDue);
+    return d >= 0 && d <= 14;
+  });
+
+  const statCards = [
+    { label: "Total Clients", value: data.clients.length, icon: <Users size={20} />, color: T.info },
+    { label: "Total Vehicles", value: data.cars.length, icon: <Car size={20} />, color: T.accent },
+    { label: "Pending Approvals", value: pendingAppts.length, icon: <Clock size={20} />, color: T.warning, highlight: pendingAppts.length > 0 },
+    { label: "Overdue Services", value: overdueServices.length, icon: <AlertTriangle size={20} />, color: T.danger, highlight: overdueServices.length > 0 },
+  ];
+
+  return (
+    <div>
+      <h1 style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 32, fontWeight: 800, color: T.textBright, marginBottom: 8 }}>Admin Dashboard</h1>
+      <p style={{ color: T.muted, fontSize: 14, marginBottom: 24 }}>System overview and admin controls</p>
+
+      {/* Stats Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 32 }}>
+        {statCards.map((stat, i) => (
+          <Card key={i} style={{ padding: 20, border: stat.highlight ? `2px solid ${stat.color}` : `1px solid ${T.border}` }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={{ color: stat.color, opacity: 0.7 }}>{stat.icon}</div>
+              {stat.highlight && <div style={{ fontSize: 10, fontWeight: 700, color: stat.color, background: `${stat.color}22`, padding: "2px 6px", borderRadius: 3 }}>ACTION NEEDED</div>}
+            </div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: T.textBright, marginBottom: 4 }}>{stat.value}</div>
+            <div style={{ fontSize: 12, color: T.muted }}>{stat.label}</div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Quick Actions */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 20, marginBottom: 32 }}>
+        {/* Pending Appointments */}
+        <Card style={{ padding: 20 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: T.textBright, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+            <Clock size={18} /> Pending Appointments ({pendingAppts.length})
+          </h2>
+          {pendingAppts.length === 0 ? (
+            <p style={{ color: T.muted, fontSize: 14 }}>All appointments approved ✓</p>
+          ) : (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 300, overflowY: "auto", marginBottom: 16 }}>
+                {pendingAppts.slice(0, 5).map(appt => {
+                  const client = data.clients.find(c => c.id === appt.clientId);
+                  const car = data.cars.find(c => c.id === appt.carId);
+                  return (
+                    <div key={appt.id} style={{ padding: 10, background: T.cardHover, borderRadius: 6, fontSize: 13 }}>
+                      <div style={{ fontWeight: 600, color: T.textBright }}>{client?.name || "Unknown"}</div>
+                      <div style={{ color: T.muted, fontSize: 12 }}>{car?.plate || "?"} · {appt.date} {appt.time}</div>
+                    </div>
+                  );
+                })}
+              </div>
+              <Btn onClick={onManageAppointments} style={{ width: "100%" }}>Manage Approvals</Btn>
+            </>
+          )}
+        </Card>
+
+        {/* Overdue Services */}
+        <Card style={{ padding: 20 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: T.textBright, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+            <AlertTriangle size={18} /> Overdue Services ({overdueServices.length})
+          </h2>
+          {overdueServices.length === 0 ? (
+            <p style={{ color: T.muted, fontSize: 14 }}>No overdue services ✓</p>
+          ) : (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 300, overflowY: "auto", marginBottom: 16 }}>
+                {overdueServices.slice(0, 5).map(service => {
+                  const car = data.cars.find(c => c.plate === service.plate);
+                  const client = car ? data.clients.find(c => c.id === car.clientId) : null;
+                  const daysOverdue = Math.abs(daysUntil(service.nextDue));
+                  return (
+                    <div key={service.id} style={{ padding: 10, background: T.dangerDim, borderRadius: 6, fontSize: 13 }}>
+                      <div style={{ fontWeight: 600, color: T.textBright }}>{client?.name || "Unknown"}</div>
+                      <div style={{ color: T.muted, fontSize: 12 }}>{service.plate} · {service.type} · {daysOverdue}d overdue</div>
+                    </div>
+                  );
+                })}
+              </div>
+              <Btn onClick={onSendReminder} style={{ width: "100%" }}>Send Reminders</Btn>
+            </>
+          )}
+        </Card>
+      </div>
+
+      {/* System Health */}
+      <Card style={{ padding: 20 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: T.textBright, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+          <Zap size={18} /> System Health
+        </h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+          <div style={{ padding: 12, background: T.successDim, borderRadius: 6 }}>
+            <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>Database Status</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: T.success }}>✓ Connected</div>
+          </div>
+          <div style={{ padding: 12, background: T.infoDim, borderRadius: 6 }}>
+            <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>Email Service</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: T.info }}>✓ Ready</div>
+          </div>
+          <div style={{ padding: 12, background: T.infoDim, borderRadius: 6 }}>
+            <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>Scheduler</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: T.info }}>✓ Active</div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ─── APPOINTMENT MANAGEMENT VIEW ──────────────────────────────────────────────
+
+function AppointmentManagementView({ data, onBack, navigate, showToast }) {
+  const [filter, setFilter] = useState("pending"); // pending | confirmed | all
+  const [selectedApptId, setSelectedApptId] = useState(null);
+  const [rescheduleModal, setRescheduleModal] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
+
+  const appts = data.appointments.filter(a => {
+    if (filter === "pending") return a.status === "Pending";
+    if (filter === "confirmed") return a.status === "Confirmed";
+    return true;
+  }).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  const handleApprove = async (apptId) => {
+    try {
+      const appt = data.appointments.find(a => a.id === apptId);
+      await databaseManager.update('appointments', apptId, { ...appt, status: 'Confirmed' });
+      
+      // Send confirmation email
+      const client = data.clients.find(c => c.id === appt.clientId);
+      const car = data.cars.find(c => c.id === appt.carId);
+      if (client && window.autoshiftAgent?.sendEmail) {
+        await window.autoshiftAgent.sendEmail(
+          client.email,
+          client.name,
+          'confirmation',
+          { vehiclePlate: car?.plate, date: appt.date, time: appt.time, serviceType: appt.type }
+        );
+      }
+      
+      showToast("Appointment approved and confirmation sent");
+      setSelectedApptId(null);
+      navigate(''); // Trigger refresh
+    } catch (error) {
+      console.error('Error approving appointment:', error);
+      showToast("Error approving appointment");
+    }
+  };
+
+  const handleReject = async (apptId) => {
+    if (!rejectReason.trim()) {
+      showToast("Please enter a reason for rejection");
+      return;
+    }
+    try {
+      const appt = data.appointments.find(a => a.id === apptId);
+      await databaseManager.delete('appointments', apptId);
+      showToast("Appointment rejected");
+      setSelectedApptId(null);
+      setRejectReason("");
+      navigate('');
+    } catch (error) {
+      showToast("Error rejecting appointment");
+    }
+  };
+
+  const handleReschedule = async (apptId, newDate, newTime) => {
+    try {
+      const appt = data.appointments.find(a => a.id === apptId);
+      await databaseManager.update('appointments', apptId, { ...appt, date: newDate, time: newTime, status: 'Pending' });
+      showToast("Appointment rescheduled");
+      setRescheduleModal(null);
+      navigate('');
+    } catch (error) {
+      showToast("Error rescheduling appointment");
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+        <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+          <ArrowLeft size={20} color={T.text} />
+        </button>
+        <h1 style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 28, fontWeight: 800, color: T.textBright }}>Appointment Management</h1>
+      </div>
+
+      {/* Filter Tabs */}
+      <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
+        {["pending", "confirmed", "all"].map(f => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            style={{
+              padding: "8px 16px",
+              background: filter === f ? T.accent : T.card,
+              color: filter === f ? "#FFF" : T.text,
+              border: `1px solid ${filter === f ? T.accent : T.border}`,
+              borderRadius: 6,
+              cursor: "pointer",
+              fontWeight: 600,
+              fontSize: 13
+            }}
+          >
+            {f.charAt(0).toUpperCase() + f.slice(1)} ({appts.filter(a => 
+              f === "pending" ? a.status === "Pending" : 
+              f === "confirmed" ? a.status === "Confirmed" : true
+            ).length})
+          </button>
+        ))}
+      </div>
+
+      {/* Appointments List */}
+      {appts.length === 0 ? (
+        <Card style={{ padding: 40, textAlign: "center" }}>
+          <CheckCircle2 size={40} style={{ color: T.success, margin: "0 auto 16px", display: "block" }} />
+          <p style={{ color: T.muted, fontSize: 14 }}>No appointments to show</p>
+        </Card>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
+          {appts.map(appt => {
+            const client = data.clients.find(c => c.id === appt.clientId);
+            const car = data.cars.find(c => c.id === appt.carId);
+            const isSelected = selectedApptId === appt.id;
+
+            return (
+              <Card
+                key={appt.id}
+                onClick={() => setSelectedApptId(isSelected ? null : appt.id)}
+                style={{
+                  padding: 16,
+                  cursor: "pointer",
+                  border: isSelected ? `2px solid ${T.accent}` : `1px solid ${T.border}`,
+                  background: isSelected ? T.cardHover : T.card
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div>
+                    <div style={{ fontWeight: 700, color: T.textBright, marginBottom: 4 }}>{client?.name || "Unknown"}</div>
+                    <div style={{ fontSize: 12, color: T.muted }}>{car?.plate || "?"} · {appt.type}</div>
+                  </div>
+                  <Badge level={appt.status === "Confirmed" ? "ok" : "warning"} custom={appt.status} />
+                </div>
+
+                <div style={{ fontSize: 13, color: T.muted, marginBottom: 12 }}>
+                  <div>📅 {appt.date} at {appt.time}</div>
+                  <div>📞 {client?.phone}</div>
+                </div>
+
+                {isSelected && appt.status === "Pending" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <Btn onClick={(e) => { e.stopPropagation(); handleApprove(appt.id); }} style={{ background: T.success, color: "#FFF" }}>
+                      ✓ Approve & Send
+                    </Btn>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setSelectedApptId(null); }}
+                      style={{
+                        padding: "8px 12px",
+                        background: T.card,
+                        border: `1px solid ${T.border}`,
+                        borderRadius: 6,
+                        cursor: "pointer",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: T.text
+                      }}
+                    >
+                      ✗ Reject
+                    </button>
+                    {rejectReason && (
+                      <textarea
+                        value={rejectReason}
+                        onChange={(e) => setRejectReason(e.target.value)}
+                        placeholder="Reason for rejection..."
+                        style={{
+                          padding: "8px 12px",
+                          background: T.cardHover,
+                          border: `1px solid ${T.border}`,
+                          borderRadius: 6,
+                          fontSize: 12,
+                          fontFamily: "inherit",
+                          minHeight: 60
+                        }}
+                      />
+                    )}
+                    {rejectReason && (
+                      <Btn onClick={(e) => { e.stopPropagation(); handleReject(appt.id); }} style={{ background: T.danger, color: "#FFF" }}>
+                        Confirm Rejection
+                      </Btn>
+                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setRescheduleModal(appt.id); }}
+                      style={{
+                        padding: "8px 12px",
+                        background: T.infoDim,
+                        border: `1px solid ${T.info}`,
+                        borderRadius: 6,
+                        cursor: "pointer",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: T.info
+                      }}
+                    >
+                      📅 Reschedule
+                    </button>
+                  </div>
+                )}
+
+                {isSelected && appt.status === "Confirmed" && (
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setRescheduleModal(appt.id); }}
+                      style={{
+                        flex: 1,
+                        padding: "8px 12px",
+                        background: T.infoDim,
+                        border: `1px solid ${T.info}`,
+                        borderRadius: 6,
+                        cursor: "pointer",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: T.info
+                      }}
+                    >
+                      📅 Reschedule
+                    </button>
+                  </div>
+                )}
+
+                {rescheduleModal === appt.id && <RescheduleModal appt={appt} onSave={handleReschedule} onClose={() => setRescheduleModal(null)} />}
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── CAMPAIGN TOOLS VIEW ──────────────────────────────────────────────────────
+
+function CampaignToolsView({ data, onBack, showToast }) {
+  const [campaignType, setCampaignType] = useState("reminder"); // reminder | sms
+  const [criteria, setCriteria] = useState("due_soon"); // due_soon | overdue | all
+  const [selectedClients, setSelectedClients] = useState(new Set());
+  const [scheduleTime, setScheduleTime] = useState(new Date().toISOString().split("T")[0]);
+  const [isDraft, setIsDraft] = useState(false);
+  const [campaigns, setCampaigns] = useState([]);
+
+  const getFilteredClients = () => {
+    const filtered = data.clients.filter(client => {
+      const clientCars = data.cars.filter(c => c.clientId === client.id);
+      const clientServices = data.services.filter(s => clientCars.some(c => c.plate === s.plate));
+
+      if (criteria === "due_soon") {
+        return clientServices.some(s => {
+          const d = daysUntil(s.nextDue);
+          return d > 0 && d <= 14;
+        });
+      }
+      if (criteria === "overdue") {
+        return clientServices.some(s => daysUntil(s.nextDue) < 0);
+      }
+      return true;
+    });
+
+    return filtered.sort((a, b) => a.name.localeCompare(b.name));
+  };
+
+  const filteredClients = getFilteredClients();
+
+  const handleSelectClient = (clientId) => {
+    const newSelected = new Set(selectedClients);
+    if (newSelected.has(clientId)) {
+      newSelected.delete(clientId);
+    } else {
+      newSelected.add(clientId);
+    }
+    setSelectedClients(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedClients.size === filteredClients.length) {
+      setSelectedClients(new Set());
+    } else {
+      setSelectedClients(new Set(filteredClients.map(c => c.id)));
+    }
+  };
+
+  const handleSendCampaign = async () => {
+    if (selectedClients.size === 0) {
+      showToast("Please select at least one client");
+      return;
+    }
+
+    try {
+      let sent = 0;
+      for (const clientId of selectedClients) {
+        const client = data.clients.find(c => c.id === clientId);
+        const clientCars = data.cars.filter(c => c.clientId === clientId);
+
+        if (campaignType === "reminder" && window.autoshiftAgent?.sendEmail) {
+          const vehicles = clientCars.map(c => `${c.make} ${c.model} (${c.plate})`);
+          await window.autoshiftAgent.sendEmail(
+            client.email,
+            client.name,
+            'reminder',
+            { vehicles, daysUntilDue: 7 }
+          );
+          sent++;
+        }
+      }
+
+      const campaign = {
+        id: uid(),
+        type: campaignType,
+        criteria,
+        count: sent,
+        timestamp: new Date().toLocaleString(),
+        status: "Sent"
+      };
+      setCampaigns([campaign, ...campaigns]);
+      setSelectedClients(new Set());
+      showToast(`Campaign sent to ${sent} client${sent === 1 ? "" : "s"}`);
+    } catch (error) {
+      console.error("Campaign error:", error);
+      showToast("Error sending campaign");
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+        <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+          <ArrowLeft size={20} color={T.text} />
+        </button>
+        <h1 style={{ fontFamily: "'Roboto Condensed', sans-serif", fontSize: 28, fontWeight: 800, color: T.textBright }}>Campaign Tools</h1>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        {/* Configuration */}
+        <Card style={{ padding: 20 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: T.textBright, marginBottom: 16 }}>Create Campaign</h2>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 8 }}>Campaign Type</label>
+            <select
+              value={campaignType}
+              onChange={(e) => setCampaignType(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                background: T.card,
+                border: `1px solid ${T.border}`,
+                borderRadius: 6,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer"
+              }}
+            >
+              <option value="reminder">Email Reminder</option>
+              <option value="sms">SMS Message</option>
+            </select>
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 8 }}>Target Clients</label>
+            <select
+              value={criteria}
+              onChange={(e) => setCriteria(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                background: T.card,
+                border: `1px solid ${T.border}`,
+                borderRadius: 6,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer"
+              }}
+            >
+              <option value="due_soon">Due Soon (next 14 days)</option>
+              <option value="overdue">Overdue</option>
+              <option value="all">All Clients</option>
+            </select>
+          </div>
+
+          <div style={{ marginBottom: 16, padding: 12, background: T.successDim, borderRadius: 6 }}>
+            <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>Recipients Found</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: T.success }}>{selectedClients.size} / {filteredClients.length}</div>
+          </div>
+
+          <div style={{ display: "flex", gap: 8 }}>
+            <Btn onClick={handleSendCampaign} style={{ flex: 1 }}>Send Campaign</Btn>
+            <Btn onClick={() => setIsDraft(!isDraft)} variant="ghost">Save as Draft</Btn>
+          </div>
+        </Card>
+
+        {/* Recipients */}
+        <Card style={{ padding: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: T.textBright }}>Recipients</h2>
+            <button
+              onClick={handleSelectAll}
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: T.accent,
+                textDecoration: "underline"
+              }}
+            >
+              {selectedClients.size === filteredClients.length ? "Deselect All" : "Select All"}
+            </button>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 500, overflowY: "auto", paddingRight: 8 }}>
+            {filteredClients.map(client => (
+              <label
+                key={client.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "8px 10px",
+                  background: selectedClients.has(client.id) ? T.accentGlow : T.cardHover,
+                  border: `1px solid ${selectedClients.has(client.id) ? T.accent : T.border}`,
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontSize: 13
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedClients.has(client.id)}
+                  onChange={() => handleSelectClient(client.id)}
+                  style={{ cursor: "pointer", width: 16, height: 16 }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, color: T.textBright }}>{client.name}</div>
+                  <div style={{ fontSize: 11, color: T.muted }}>{client.email}</div>
+                </div>
+              </label>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* Campaign History */}
+      {campaigns.length > 0 && (
+        <Card style={{ padding: 20, marginTop: 20 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: T.textBright, marginBottom: 16 }}>Campaign History</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {campaigns.map(c => (
+              <div key={c.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", background: T.cardHover, borderRadius: 6, fontSize: 13 }}>
+                <div>
+                  <div style={{ fontWeight: 600, color: T.textBright }}>
+                    {c.type === "reminder" ? "📧" : "💬"} {c.criteria} - {c.count} sent
+                  </div>
+                  <div style={{ fontSize: 11, color: T.muted }}>{c.timestamp}</div>
+                </div>
+                <Badge level="ok" custom={c.status} />
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ─── RESCHEDULE APPOINTMENT MODAL ─────────────────────────────────────────────
+
+function RescheduleModal({ appt, onSave, onClose }) {
+  const [newDate, setNewDate] = useState(appt.date);
+  const [newTime, setNewTime] = useState(appt.time);
+
+  return (
+    <Modal title="Reschedule Appointment" onClose={onClose} width={400}>
+      <div style={{ marginBottom: 20 }}>
+        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 8 }}>New Date</label>
+        <input
+          type="date"
+          value={newDate}
+          onChange={(e) => setNewDate(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "8px 12px",
+            background: T.card,
+            border: `1px solid ${T.border}`,
+            borderRadius: 6,
+            fontSize: 13
+          }}
+        />
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 8 }}>New Time</label>
+        <input
+          type="time"
+          value={newTime}
+          onChange={(e) => setNewTime(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "8px 12px",
+            background: T.card,
+            border: `1px solid ${T.border}`,
+            borderRadius: 6,
+            fontSize: 13
+          }}
+        />
+      </div>
+
+      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+        <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
+        <Btn onClick={() => { onSave(appt.id, newDate, newTime); onClose(); }}>Save Changes</Btn>
+      </div>
+    </Modal>
+  );
+}
+
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
 function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast, onLock, onDataChanged, onAddCar }) {
   const [dialog, setDialog] = useState(null); // "adminPin" | "changePin"
@@ -1406,6 +2040,12 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
     { key: "schedule", icon: <CalendarDays size={18} />, label: "Schedule" },
     { key: "clients", icon: <Users size={18} />, label: "Clients" },
   ];
+
+  const adminNav = isAdmin ? [
+    { key: "adminDashboard", icon: <Shield size={18} />, label: "Admin Dashboard" },
+    { key: "appointments", icon: <CheckCircle2 size={18} />, label: "Appointments" },
+    { key: "campaigns", icon: <Zap size={18} />, label: "Campaigns" },
+  ] : [];
 
   return (
     <div style={{ width: 220, background: T.sidebar, borderRight: `1px solid ${T.border}`, display: "flex", flexDirection: "column", height: "100vh", position: "fixed", left: 0, top: 0, fontFamily: "'Roboto', sans-serif" }}>
@@ -1437,7 +2077,54 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
           <Plus size={16} strokeWidth={2.5} color="#FFFFFF" /> REGISTER VEHICLE
         </button>
 
-        {/* Data / backup status */}
+        {/* Regular Nav */}
+        {nav.map(item => (
+          <button
+            key={item.key}
+            onClick={() => navigate(item.key)}
+            style={{
+              width: "100%", padding: "11px 12px", marginBottom: "6px",
+              background: active === item.key ? "rgba(255,255,255,0.15)" : "transparent",
+              color: active === item.key ? "#FFFFFF" : "#B4B4B4",
+              border: "none", borderRadius: "6px", cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 10,
+              fontSize: "13px", fontWeight: 600, transition: "all 0.15s",
+              fontFamily: "'Roboto', sans-serif"
+            }}
+          >
+            {item.icon}
+            {item.label}
+            {item.badge ? <span style={{ marginLeft: "auto", background: T.danger, color: "#FFF", fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 3 }}>{item.badge}</span> : null}
+          </button>
+        ))}
+
+        {/* Admin Nav */}
+        {adminNav.length > 0 && (
+          <>
+            <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "14px 0" }} />
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#94A3B8", padding: "8px 12px", letterSpacing: 0.8, textTransform: "uppercase" }}>Admin</div>
+            {adminNav.map(item => (
+              <button
+                key={item.key}
+                onClick={() => navigate(item.key)}
+                style={{
+                  width: "100%", padding: "11px 12px", marginBottom: "6px",
+                  background: active === item.key ? "rgba(155,49,49,0.3)" : "transparent",
+                  color: active === item.key ? "#FFFFFF" : "#B4B4B4",
+                  border: active === item.key ? `1px solid ${T.accent}` : "1px solid transparent",
+                  borderRadius: "6px", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 10,
+                  fontSize: "13px", fontWeight: 600, transition: "all 0.15s",
+                  fontFamily: "'Roboto', sans-serif"
+                }}
+              >
+                {item.icon}
+                {item.label}
+              </button>
+            ))}
+          </>
+        )}
+      </nav>
         <div style={{
           padding: "10px 12px", marginBottom: "16px", borderRadius: "8px",
           background: backupStale ? "rgba(234, 179, 8, 0.15)" : "rgba(34, 197, 94, 0.15)",
@@ -1910,6 +2597,31 @@ export default function App() {
         {view === "alerts" && <AlertsView data={data} navigate={navigate} />}
         {view === "schedule" && <ScheduleView data={data} onAddAppt={() => setModal("addAppt")} />}
         {view === "clients" && <ClientsView data={data} navigate={navigate} onAddCar={openAddCar} />}
+        
+        {/* Admin Views */}
+        {view === "adminDashboard" && (
+          <AdminDashboardView 
+            data={data} 
+            navigate={navigate} 
+            onSendReminder={() => setView("campaigns")}
+            onManageAppointments={() => setView("appointments")}
+          />
+        )}
+        {view === "appointments" && (
+          <AppointmentManagementView 
+            data={data} 
+            onBack={() => setView("adminDashboard")}
+            navigate={navigate}
+            showToast={showToast}
+          />
+        )}
+        {view === "campaigns" && (
+          <CampaignToolsView 
+            data={data} 
+            onBack={() => setView("adminDashboard")}
+            showToast={showToast}
+          />
+        )}
       </div>
 
       {/* Modals */}
