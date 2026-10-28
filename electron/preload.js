@@ -36,3 +36,45 @@ contextBridge.exposeInMainWorld('autoshift', {
     chooseDir: () => call('backup:chooseDir'),
   },
 });
+
+// ==================== AI AGENT ====================
+contextBridge.exposeInMainWorld('autoshiftAgent', {
+  // Chat with AI agent
+  chat: (message, clientId) => ipcRenderer.invoke('agent:chat', message, clientId),
+  
+  // Get pending appointments
+  getPendingAppointments: () => ipcRenderer.invoke('agent:get-pending-appointments'),
+  
+  // Send email
+  sendEmail: (to, clientName, messageType, appointmentDetails) => 
+    ipcRenderer.invoke('agent:send-email', { to, clientName, messageType, appointmentDetails }),
+
+  // ==================== ADMIN ====================
+  admin: {
+    // Dashboard
+    getDashboard: () => ipcRenderer.invoke('admin:get-dashboard'),
+    
+    // Clients
+    getClients: () => ipcRenderer.invoke('admin:get-clients'),
+    getClient: (clientId) => ipcRenderer.invoke('admin:get-client', clientId),
+    createClient: (data) => ipcRenderer.invoke('admin:create-client', data),
+    updateClient: (data) => ipcRenderer.invoke('admin:update-client', data),
+    
+    // Vehicles
+    getVehicles: (clientId) => ipcRenderer.invoke('admin:get-vehicles', clientId),
+    createVehicle: (data) => ipcRenderer.invoke('admin:create-vehicle', data),
+    
+    // Appointments
+    getAppointments: (filters) => ipcRenderer.invoke('admin:get-appointments', filters),
+    createAppointment: (data) => ipcRenderer.invoke('admin:create-appointment', data),
+    updateAppointment: (data) => ipcRenderer.invoke('admin:update-appointment', data),
+    cancelAppointment: (id) => ipcRenderer.invoke('admin:cancel-appointment', id),
+    
+    // Services
+    getServices: (plate) => ipcRenderer.invoke('admin:get-services', plate),
+    createService: (data) => ipcRenderer.invoke('admin:create-service', data),
+  },
+
+  // Listen for events from main process
+  onReminderCheck: (callback) => ipcRenderer.on('agent:reminder-check', (event, data) => callback(data)),
+});

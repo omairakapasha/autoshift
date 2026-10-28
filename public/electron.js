@@ -5,12 +5,14 @@ const isDev = !app.isPackaged;
 const { AutoShiftDatabase } = require('../electron/db/Database');
 const { registerIpc, scheduleBackups } = require('../electron/ipc');
 const { AuthService } = require('../electron/auth');
+const { AgentBridge } = require('../electron/agentBridge');
 
 let mainWindow = null;
 let database = null;
 let stopBackups = null;
 let ipcApi = null;
 let auth = null;
+let agentBridge = null;
 let readyToQuit = false;
 
 function createWindow() {
@@ -91,6 +93,10 @@ if (!app.requestSingleInstanceLock()) {
     });
     stopBackups = scheduleBackups(database, ipcApi.runBackup);
 
+    // Initialize Agent Bridge for AI functionality
+    agentBridge = new AgentBridge(mainWindow, path.join(userData, 'autoshift.db'));
+    agentBridge.startReminderScheduler();
+
     createWindow();
   });
 }
@@ -100,6 +106,7 @@ app.on('before-quit', (event) => {
   if (readyToQuit || !database) return;
   event.preventDefault();
   if (stopBackups) stopBackups();
+  if (agentBridge) agentBridge.shutdown();
   Promise.resolve(ipcApi && ipcApi.idle()).finally(() => {
     database.close();
     readyToQuit = true;
