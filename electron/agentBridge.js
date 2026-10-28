@@ -49,27 +49,6 @@ class AgentBridge {
       return;
     }
 
-    // ==================== CHAT ====================
-    ipcMain.handle('agent:chat', async (event, message, clientId) => {
-      try {
-        const response = await this.agent.chat(message, clientId);
-        return { success: true, response };
-      } catch (error) {
-        console.error('Chat error:', error.message);
-        return { success: false, error: error.message };
-      }
-    });
-
-    // ==================== APPOINTMENTS ====================
-    ipcMain.handle('agent:get-pending-appointments', async (event) => {
-      try {
-        const appointments = this.agent.getPendingAppointments();
-        return { success: true, appointments };
-      } catch (error) {
-        return { success: false, error: error.message };
-      }
-    });
-
     // ==================== EMAIL ====================
     ipcMain.handle('agent:send-email', async (event, { to, clientName, messageType, appointmentDetails }) => {
       try {

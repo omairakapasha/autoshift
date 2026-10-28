@@ -37,20 +37,13 @@ contextBridge.exposeInMainWorld('autoshift', {
   },
 });
 
-// ==================== AI AGENT ====================
+// ==================== CLIENT COMMUNICATION (Email & SMS Only) ====================
 contextBridge.exposeInMainWorld('autoshiftAgent', {
-  // Chat with AI agent
-  chat: (message, clientId) => ipcRenderer.invoke('agent:chat', message, clientId),
-  
-  // Get pending appointments
-  getPendingAppointments: () => ipcRenderer.invoke('agent:get-pending-appointments'),
-  
-  // Send email
+  // Send email to client
   sendEmail: (to, clientName, messageType, appointmentDetails) => 
     ipcRenderer.invoke('agent:send-email', { to, clientName, messageType, appointmentDetails }),
 
-  // ==================== ADMIN ====================
-  admin: {
+  // Admin functions for backend management
     // Dashboard
     getDashboard: () => ipcRenderer.invoke('admin:get-dashboard'),
     
