@@ -2385,7 +2385,9 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
           </>
         )}
       </nav>
-        <div style={{
+
+      {/* Backup Status */}
+      <div style={{
           padding: "10px 12px", marginBottom: "16px", borderRadius: "8px",
           background: backupStale ? "rgba(234, 179, 8, 0.15)" : "rgba(34, 197, 94, 0.15)",
           border: `1px solid ${backupStale ? "rgba(250, 204, 21, 0.35)" : "rgba(74, 222, 128, 0.35)"}`,
@@ -2401,36 +2403,6 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
             Last backup: {formatLastSynced(backup.lastBackupAt)}
           </div>
         </div>
-
-        {nav.map(item => {
-          const isActive = active === item.key || (active === "car" && item.key === "lookup");
-          return (
-            <button key={item.key} onClick={() => navigate(item.key)} style={{
-              width: "100%", display: "flex", alignItems: "center", gap: 10,
-              padding: "10px 12px", borderRadius: 8, marginBottom: 2,
-              background: isActive ? T.accent : "transparent",
-              boxShadow: isActive ? `0 4px 12px rgba(0,0,0,0.3)` : "none",
-              border: isActive ? `1px solid ${T.accent}` : "1px solid transparent",
-              color: isActive ? "#FFFFFF" : "#E2E8F0",
-              fontFamily: "'Roboto', sans-serif", fontWeight: isActive ? 700 : 500,
-              fontSize: 14, cursor: "pointer", textAlign: "left", position: "relative",
-              transition: "all 0.15s",
-            }}>
-              {item.icon}
-              {item.label}
-              {item.badge > 0 && (
-                <span style={{
-                  marginLeft: "auto", background: T.danger, color: "#fff",
-                  fontSize: 11, fontWeight: 700, borderRadius: 10, fontFamily: "'Roboto', sans-serif",
-                  padding: "1px 6px", minWidth: 18, textAlign: "center",
-                }}>
-                  {item.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
 
       {/* Footer */}
       <div style={{ padding: "14px 16px", borderTop: `1px solid ${T.border}` }}>
