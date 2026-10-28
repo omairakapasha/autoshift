@@ -2315,7 +2315,7 @@ function Sidebar({ active, navigate, alertCount, isAdmin, setIsAdmin, showToast,
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: "14px 10px" }}>
+      <nav style={{ flex: 1, padding: "14px 10px", overflowY: "auto", overflowX: "hidden" }}>
         {/* Quick Action: Register Vehicle */}
         <button
           onClick={() => onAddCar("")}
