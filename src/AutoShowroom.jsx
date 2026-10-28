@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Search, Car, Bell, CalendarDays, Users,
   Plus, AlertTriangle, CheckCircle2, Clock, Wrench, ChevronRight,
   ArrowLeft, X, Phone, Mail, User, Zap, TrendingUp, FileText,
-  MoreVertical, RefreshCw, Shield,
+  MoreVertical, RefreshCw, Shield, Gauge,
   Download, Upload
 } from "lucide-react";
 import { databaseManager } from "./database/index.js";
@@ -132,7 +132,7 @@ function ManageTechsModal({ techs, onSave, onClose }) {
   );
 }
 
-function AddServiceModal({ plate, techs, onSave, onClose }) {
+function AddServiceModal({ plate, techs, onSave, onClose, carMileage = "" }) {
   const today = new Date().toISOString().split("T")[0];
   const nextDueDefault = new Date(Date.now() + 90 * 86400000).toISOString().split("T")[0];
   const [form, setForm] = useState({
@@ -141,6 +141,7 @@ function AddServiceModal({ plate, techs, onSave, onClose }) {
     date: today,
     nextDue: nextDueDefault,
     tech: techs[0] || "",
+    mileage: carMileage || "",
     cost: "",
     status: "Completed",
     notes: ""
@@ -157,6 +158,7 @@ function AddServiceModal({ plate, techs, onSave, onClose }) {
         <Input label="Service Date" required type="date" value={form.date} onChange={v => set("date", v)} />
         <Input label="Next Due Date" required type="date" value={form.nextDue} onChange={v => set("nextDue", v)} />
         <Select label="Technician" required value={form.tech} onChange={v => set("tech", v)} options={techs} />
+        <Input label="Mileage (km)" type="number" value={form.mileage} onChange={v => set("mileage", v)} placeholder="e.g. 45000" />
         <Input label="Cost (PKR)" type="number" value={form.cost} onChange={v => set("cost", v)} placeholder="e.g. 5000" />
         <Select label="Status" value={form.status} onChange={v => set("status", v)} options={["Received", "In Progress", "Waiting for Parts", "Completed"]} />
         <div style={{ gridColumn: "1/-1", display: "flex", flexDirection: "column", gap: 6 }}>
@@ -194,6 +196,7 @@ function EditServiceModal({ service, techs, onSave, onClose }) {
         <Input label="Service Date" required type="date" value={form.date} onChange={v => set("date", v)} />
         <Input label="Next Due Date" required type="date" value={form.nextDue} onChange={v => set("nextDue", v)} />
         <Select label="Technician" required value={form.tech} onChange={v => set("tech", v)} options={techs} />
+        <Input label="Mileage (km)" type="number" value={form.mileage} onChange={v => set("mileage", v)} />
         <Input label="Cost (PKR)" type="number" value={form.cost} onChange={v => set("cost", v)} />
         <Select label="Status" value={form.status} onChange={v => set("status", v)} options={["Received", "In Progress", "Waiting for Parts", "Completed"]} />
         <div style={{ gridColumn: "1/-1", display: "flex", flexDirection: "column", gap: 6 }}>
@@ -398,6 +401,7 @@ function AddCarModal({ prefillPlate = "", prefillClientId = "", clients, onSave,
     model: "",
     year: new Date().getFullYear(),
     color: "",
+    mileage: "",
     clientId: prefillClientId || clients[0]?.id || ""
   });
   const [newClient, setNewClient] = useState({ name: "", phone: "", email: "" });
@@ -417,6 +421,7 @@ function AddCarModal({ prefillPlate = "", prefillClientId = "", clients, onSave,
         <Input label="Model" required value={form.model} onChange={v => set("model", v)} placeholder="e.g. Corolla" />
         <Input label="Year" required type="number" value={form.year} onChange={v => set("year", Number(v))} />
         <Input label="Color" value={form.color} onChange={v => set("color", v)} placeholder="e.g. Silver" />
+        <Input label="Current Mileage (km)" type="number" value={form.mileage} onChange={v => set("mileage", v)} placeholder="e.g. 0" />
       </div>
 
       <div style={{ marginTop: 20, marginBottom: 12, height: 1, background: T.border }} />
@@ -960,6 +965,7 @@ function CarDetailView({ data, plate, onBack, onAddService, onSchedule, navigate
               {car.year} {car.make} {car.model}
             </h1>
             <p style={{ color: T.muted, fontSize: 14 }}>{car.color}</p>
+            {car.mileage && <p style={{ color: T.muted, fontSize: 13, marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}><Gauge size={13} /> Current: {car.mileage?.toLocaleString()} km</p>}
           </div>
           <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
             {isAdmin && (
@@ -1090,6 +1096,7 @@ function CarDetailView({ data, plate, onBack, onAddService, onSchedule, navigate
                             { icon: <Clock size={11} />, val: fmt(s.date) },
                             { icon: <RefreshCw size={11} />, val: `Next: ${fmt(s.nextDue)}` },
                             { icon: <User size={11} />, val: s.tech },
+                            ...(s.mileage ? [{ icon: <Gauge size={11} />, val: `${s.mileage?.toLocaleString()} km` }] : []),
                           ].map((m, j) => (
                             <span key={j} style={{ fontSize: 12, color: T.muted, display: "flex", alignItems: "center", gap: 5 }}>
                               {m.icon} {m.val}
@@ -1907,7 +1914,7 @@ export default function App() {
 
       {/* Modals */}
       {modal === "addService" && selectedPlate && (
-        <AddServiceModal plate={selectedPlate} techs={techs} onSave={handleAddService} onClose={() => setModal(null)} />
+        <AddServiceModal plate={selectedPlate} carMileage={data.cars.find(c => c.plate === selectedPlate)?.mileage} techs={techs} onSave={handleAddService} onClose={() => setModal(null)} />
       )}
       {modal === "addCar" && (
         <AddCarModal prefillPlate={pendingPlate} prefillClientId={pendingClientId} clients={data.clients} onSave={handleAddCar} onClose={() => setModal(null)} />

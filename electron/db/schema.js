@@ -75,6 +75,13 @@ const MIGRATIONS = [
       CREATE INDEX idx_clients_phone      ON clients(phone);
     `);
   },
+  // v2 — add mileage tracking
+  (db) => {
+    db.exec(`
+      ALTER TABLE cars ADD COLUMN mileage INTEGER;
+      ALTER TABLE services ADD COLUMN mileage INTEGER;
+    `);
+  },
 ];
 
 const SCHEMA_VERSION = MIGRATIONS.length;
@@ -103,8 +110,8 @@ function migrate(db) {
  */
 const TABLES = {
   clients:      { fields: ['name', 'phone', 'email', 'since'], required: ['name', 'phone'] },
-  cars:         { fields: ['plate', 'make', 'model', 'year', 'color', 'clientId'], required: ['plate', 'make', 'model'] },
-  services:     { fields: ['plate', 'type', 'date', 'nextDue', 'cost', 'status', 'tech', 'notes'], required: ['plate', 'type', 'date', 'nextDue'] },
+  cars:         { fields: ['plate', 'make', 'model', 'year', 'color', 'mileage', 'clientId'], required: ['plate', 'make', 'model'] },
+  services:     { fields: ['plate', 'type', 'date', 'nextDue', 'mileage', 'cost', 'status', 'tech', 'notes'], required: ['plate', 'type', 'date', 'nextDue'] },
   appointments: { fields: ['plate', 'clientId', 'date', 'time', 'type', 'status'], required: ['date', 'time', 'type'] },
 };
 
