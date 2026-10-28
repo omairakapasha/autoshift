@@ -48,6 +48,7 @@
     "@langchain/langgraph": "^0.2.0",
     "@sentry/react": "^10.51.0",
     "better-sqlite3": "^12.11.1",
+    "dotenv": "^18.0.9",
     "express": "^4.21.0",
     "langchain": "^0.2.0",
     "lucide-react": "^0.263.1",
