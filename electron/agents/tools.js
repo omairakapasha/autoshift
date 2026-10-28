@@ -28,18 +28,18 @@ function createTools(db) {
           WHERE 1=1
         `;
         
-        const params = [];
+        const queryParams = [];
         if (plate) {
           query += ` AND c.plate = ?`;
-          params.push(plate);
+          queryParams.push(plate);
         } else if (client_id) {
           query += ` AND c.client_id = ?`;
-          params.push(client_id);
+          queryParams.push(client_id);
         }
         
         query += ` ORDER BY s.next_due ASC`;
         
-        return db.prepare(query).all(...params);
+        return db.prepare(query).all(...queryParams);
       },
     },
 
