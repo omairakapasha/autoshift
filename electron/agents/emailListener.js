@@ -131,6 +131,14 @@ class EmailListener {
 
         console.log(`\n📬 From: ${from}`);
         console.log(`   Subject: ${subject}`);
+
+        // Filter: Check if email is related to AutoShift
+        if (!this.isAutoShiftRelated(subject, text, from)) {
+          console.log('   ⏭️  Skipped - not related to AutoShift');
+          msg.setFlags(['\\Seen'], (err) => {});
+          return;
+        }
+
         console.log(`   Preview: ${text.substring(0, 80)}...`);
 
         // Extract client email
@@ -143,8 +151,11 @@ class EmailListener {
           await this.handleCancellation(clientEmail, subject, text);
         } else if (this.isReschedule(subject, text)) {
           await this.handleReschedule(clientEmail, subject, text);
-        } else {
+        } else if (this.isAutoShiftQuery(subject, text)) {
+          // Only process general inquiries if they mention AutoShift/service/appointment
           await this.handleGeneralInquiry(clientEmail, text);
+        } else {
+          console.log('   ⏭️  Not an AutoShift-related inquiry');
         }
 
         // Mark as read
@@ -155,6 +166,43 @@ class EmailListener {
         console.error('Processing error:', error.message);
       }
     });
+  }
+
+  /**
+   * Check if email is related to AutoShift at all
+   * Prevents processing random emails (newsletters, spam, etc.)
+   */
+  isAutoShiftRelated(subject, text, from) {
+    const autoShiftKeywords = [
+      'autoshift', 'service', 'appointment', 'booking', 'vehicle', 'car',
+      'oil change', 'maintenance', 'reminder', 'confirmation', 'technician',
+      'mechanic', 'garage', 'showroom', 'plate', 'vin'
+    ];
+
+    const combined = (subject + ' ' + text + ' ' + from).toLowerCase();
+    
+    // Must contain at least one AutoShift-related keyword
+    const hasKeyword = autoShiftKeywords.some(kw => combined.includes(kw));
+    
+    // Reject obvious spam/automated emails
+    const isSpam = combined.includes('unsubscribe') && 
+                   !combined.includes('appointment');
+    
+    return hasKeyword && !isSpam;
+  }
+
+  /**
+   * Check if this is an AutoShift-related query (not just confirmation/cancel/reschedule)
+   */
+  isAutoShiftQuery(subject, text) {
+    const queryKeywords = [
+      'question', 'help', 'how', 'when', 'where', 'what',
+      'need', 'want', 'interested', 'inquire', 'asking',
+      'please', 'thanks'
+    ];
+    
+    const combined = (subject + ' ' + text).toLowerCase();
+    return queryKeywords.some(kw => combined.includes(kw));
   }
 
   isConfirmation(subject, text) {
