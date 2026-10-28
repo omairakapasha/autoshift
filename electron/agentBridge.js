@@ -66,6 +66,20 @@ class AgentBridge {
       }
     });
 
+    // ==================== SMS ====================
+    ipcMain.handle('agent:send-sms', async (event, { phone, message }) => {
+      try {
+        if (this.sms) {
+          const result = await this.sms.send(phone, message);
+          return { success: true, ...result };
+        } else {
+          return { success: false, error: 'SMS service not configured (Twilio credentials missing)' };
+        }
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    });
+
     // ==================== ADMIN OPERATIONS ====================
     ipcMain.handle('admin:get-dashboard', async (event) => {
       try {
@@ -167,6 +181,7 @@ class AgentBridge {
 
     ipcMain.handle('admin:get-appointments', async (event, { status, plate, client_id }) => {
       try {
+        // Secure: parameterized queries to prevent SQL injection
         const params = [];
         let where = [];
         if (status) { where.push('a.status = ?'); params.push(status); }

@@ -1805,6 +1805,18 @@ function CampaignToolsView({ data, onBack, showToast }) {
             { vehicles, daysUntilDue: 7 }
           );
           sent++;
+        } else if (campaignType === "sms" && window.autoshiftAgent?.sendSMS) {
+          // Send SMS via Twilio (if configured)
+          try {
+            await window.autoshiftAgent.sendSMS(
+              client.phone,
+              `AutoShift: Your vehicle needs service soon. Reply BOOK to schedule or visit https://autoshift.app`
+            );
+            sent++;
+          } catch (smsError) {
+            console.warn(`SMS send failed for ${client.phone}:`, smsError);
+            // Continue with other clients even if SMS fails
+          }
         }
       }
 

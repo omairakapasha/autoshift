@@ -43,6 +43,10 @@ contextBridge.exposeInMainWorld('autoshiftAgent', {
   sendEmail: (to, clientName, messageType, appointmentDetails) => 
     ipcRenderer.invoke('agent:send-email', { to, clientName, messageType, appointmentDetails }),
 
+  // Send SMS to client
+  sendSMS: (phone, message) => 
+    ipcRenderer.invoke('agent:send-sms', { phone, message }),
+
   // Admin functions for backend management
     // Dashboard
     getDashboard: () => ipcRenderer.invoke('admin:get-dashboard'),

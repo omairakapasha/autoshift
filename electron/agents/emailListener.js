@@ -225,14 +225,47 @@ class EmailListener {
 
   async handleConfirmation(clientEmail, subject, text) {
     console.log(`✅ Appointment confirmation from ${clientEmail}`);
+    try {
+      // Update appointment status to Confirmed
+      const appointments = this.db.prepare('SELECT * FROM appointments WHERE client_id = (SELECT id FROM clients WHERE email = ?) ORDER BY created_at DESC LIMIT 1').all(clientEmail);
+      if (appointments.length > 0) {
+        const appt = appointments[0];
+        this.db.prepare('UPDATE appointments SET status = ? WHERE id = ?').run('Confirmed', appt.id);
+        console.log(`   Updated appointment ${appt.id} to Confirmed`);
+      }
+    } catch (error) {
+      console.error('Error handling confirmation:', error.message);
+    }
   }
 
   async handleCancellation(clientEmail, subject, text) {
     console.log(`❌ Appointment cancellation from ${clientEmail}`);
+    try {
+      // Cancel latest pending appointment
+      const appointments = this.db.prepare('SELECT * FROM appointments WHERE client_id = (SELECT id FROM clients WHERE email = ?) AND status = ? ORDER BY created_at DESC LIMIT 1').all(clientEmail, 'Confirmed');
+      if (appointments.length > 0) {
+        const appt = appointments[0];
+        this.db.prepare('UPDATE appointments SET status = ? WHERE id = ?').run('Cancelled', appt.id);
+        console.log(`   Cancelled appointment ${appt.id}`);
+      }
+    } catch (error) {
+      console.error('Error handling cancellation:', error.message);
+    }
   }
 
   async handleReschedule(clientEmail, subject, text) {
     console.log(`🔄 Reschedule request from ${clientEmail}`);
+    try {
+      // Find client's next appointment and mark as needs rescheduling
+      const appointments = this.db.prepare('SELECT * FROM appointments WHERE client_id = (SELECT id FROM clients WHERE email = ?) AND status = ? ORDER BY date ASC LIMIT 1').all(clientEmail, 'Confirmed');
+      if (appointments.length > 0) {
+        const appt = appointments[0];
+        this.db.prepare('UPDATE appointments SET status = ? WHERE id = ?').run('Pending', appt.id);
+        console.log(`   Marked appointment ${appt.id} as Pending (awaiting new date)`);
+      }
+    } catch (error) {
+      console.error('Error handling reschedule:', error.message);
+    }
   }
 
   async handleGeneralInquiry(clientEmail, text) {
